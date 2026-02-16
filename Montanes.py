@@ -3,27 +3,26 @@ import urllib.parse
 import pandas as pd
 import base64 
 
-# --- 1. CONFIGURACIÓN: FORZAR QUE EL MENÚ APAREZCA ABIERTO ---
-st.set_page_config(
-    page_title="EL TACO LOCO", 
-    page_icon="🌮", 
-    layout="wide", 
-    initial_sidebar_state="expanded" 
-)
+# Configuración de la página
+st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
 
-# --- 2. FUNCIONES LÓGICAS ---
+# --- FUNCIÓN DE CALLBACK (LA SOLUCIÓN A TU PROBLEMA) ---
+# Esta función se ejecuta inmediatamente al hacer clic, sin esperar a que recargue toda la página.
 def agregar_al_carrito(producto, tipo):
     if 'carrito' not in st.session_state:
         st.session_state.carrito = {}
     
+    # Lógica de agregar
     if producto in st.session_state.carrito:
         st.session_state.carrito[producto] += 1
     else:
         st.session_state.carrito[producto] = 1
         
+    # Notificación inmediata
     icono = "🔥" if tipo == "taco" else "🧊"
     st.toast(f"¡{producto} agregado!", icon=icono)
 
+# --- FUNCIÓN PARA LEER EL LOGO ---
 def get_img_as_base64(file):
     try:
         with open(file, "rb") as f:
@@ -35,43 +34,11 @@ def get_img_as_base64(file):
 img_path = "imagenes/logo.png" 
 logo_base64 = get_img_as_base64(img_path)
 
-# --- 3. ESTILOS CSS ---
+# --- ESTILOS CSS ---
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
-    /* --- ARREGLO DEL MENÚ --- */
-    
-    /* 1. El Header de Streamlit debe estar ENCIMA de todo (z-index alto) */
-    header { 
-        background-color: transparent !important;
-        z-index: 1000000 !important;
-        height: 60px !important;
-    }
-    
-    /* 2. Ocultamos SOLO los botones internos del toolbar, NO el toolbar completo */
-    [data-testid="stToolbarActions"] { display: none !important; }
-    [data-testid="stDecoration"] { display: none !important; }
-    footer { display: none !important; }
-    .stAppDeployButton { display: none !important; }
-    /* Ocultar íconos de Github y deploy por si usan otras clases */
-    [data-testid="stToolbar"] button { display: none !important; }
-
-    /* 3. ✅ FIX REAL: El botón del menú lateral se muestra explícitamente */
-    [data-testid="collapsedControl"] { 
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        color: white !important;
-        z-index: 1000001 !important;
-    }
-    [data-testid="collapsedControl"] button {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-    
-    /* --- ESTILOS GENERALES --- */
     :root {
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
@@ -79,28 +46,21 @@ st.markdown("""
         --color-crema: #FFF8E1;
     }
 
-    .stApp { 
-        background-color: var(--color-crema); 
-        font-family: 'Poppins', sans-serif;
-        margin-top: -60px; 
-    }
+    .stApp { background-color: var(--color-crema); font-family: 'Poppins', sans-serif; }
     h1, h2, h3, h4, p, div, span, label, li { color: #212121 !important; }
 
-    /* ENCABEZADO */
+    /* HEADER */
     .header-container {
         background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo));
         padding: 2rem;
-        padding-top: 3rem;
         border-radius: 0 0 20px 20px;
         text-align: center;
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
         position: relative;
-        z-index: 1;
     }
     .logo-esquina {
-        position: absolute; top: 15px; left: 60px;
-        width: 80px;
+        position: absolute; top: 15px; left: 20px; width: 80px;
         border-radius: 50%; border: 3px solid white;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
@@ -108,11 +68,7 @@ st.markdown("""
     .header-frase-grande { color: white !important; font-weight: 900; font-size: 3rem; line-height: 1.1; margin: 0; }
 
     /* SIDEBAR */
-    [data-testid="stSidebar"] { 
-        background-color: white; 
-        border-right: 1px solid #ddd;
-        z-index: 1000002 !important;
-    }
+    [data-testid="stSidebar"] { background-color: white; border-right: 1px solid #ddd; }
     .sidebar-header {
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo));
         padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;
@@ -130,6 +86,7 @@ st.markdown("""
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important;
         color: white !important; border: none;
     }
+    header[data-testid="stHeader"] { background-color: var(--color-naranja) !important; }
 
     /* BOTONES */
     .stButton>button {
@@ -138,9 +95,9 @@ st.markdown("""
         border-radius: 25px; border: none; width: 100%; padding: 0.7rem; font-weight: 900;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s;
     }
-    .stButton>button:active { transform: scale(0.95); }
+    .stButton>button:active { transform: scale(0.95); } /* Efecto de clic */
 
-    /* NOTIFICACIONES */
+    /* NOTIFICACIONES (TOAST) */
     div[data-baseweb="toast"] {
         background-color: var(--color-naranja) !important; color: white !important;
         font-weight: bold; border: 2px solid white;
@@ -160,7 +117,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. DATOS DEL MENÚ ---
+# --- DATOS DEL MENÚ ---
 menu_tacos = {
     "Taco de Res": {"precio": 14, "img": "imagenes/taco 1.jpg", "desc": "Suave bistec de res."},
     "Taco de Puerco": {"precio": 14, "img": "imagenes/taco 2.jpg", "desc": "Adobado especial."},
@@ -174,7 +131,7 @@ menu_bebidas = {
 }
 menu_completo = {**menu_tacos, **menu_bebidas}
 
-# --- 5. INTERFAZ: ENCABEZADO ---
+# --- HEADER ---
 logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo-esquina">' if logo_base64 else ''
 st.markdown(f"""
     <div class="header-container">
@@ -184,7 +141,7 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# --- 6. INTERFAZ: BARRA LATERAL (CARRITO) ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.markdown("""<div class="sidebar-header"><h1>🛒 TU PEDIDO</h1></div>""", unsafe_allow_html=True)
     
@@ -221,7 +178,7 @@ with st.sidebar:
 
         if cliente_direccion and cliente_nombre:
             mensaje_codificado = urllib.parse.quote(texto_pedido)
-            numero_whatsapp = "9681171392"
+            numero_whatsapp = "9681171392" 
             link_whatsapp = f"https://wa.me/{numero_whatsapp}?text={mensaje_codificado}"
             st.link_button("📲 Enviar Pedido", link_whatsapp, type="primary")
         else:
@@ -231,7 +188,7 @@ with st.sidebar:
             st.session_state.carrito = {}
             st.rerun()
 
-# --- 7. INTERFAZ: PRODUCTOS ---
+# --- PRODUCTOS (USANDO CALLBACKS) ---
 tabs = st.tabs(["🌮 TACOS", "🥤 BEBIDAS", "📍 UBICACIÓN"])
 
 with tabs[0]:
@@ -245,7 +202,14 @@ with tabs[0]:
             st.markdown(f"<div class='desc-prod'>{info['desc']}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
             
-            st.button(f"AGREGAR 🛒", key=f"taco_{nombre}", on_click=agregar_al_carrito, args=(nombre, "taco"))
+            # --- CAMBIO IMPORTANTE: CALLBACK ---
+            # Usamos on_click para llamar a la función SIN esperar el recargo
+            st.button(
+                f"AGREGAR 🛒", 
+                key=f"taco_{nombre}", 
+                on_click=agregar_al_carrito,  # Llama a la funcion
+                args=(nombre, "taco")         # Le pasa el nombre de ESTE taco
+            )
 
 with tabs[1]:
     st.subheader("🧊 Bebidas Frías")
@@ -257,7 +221,13 @@ with tabs[1]:
             st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
             
-            st.button(f"AGREGAR 🥤", key=f"bebida_{nombre}", on_click=agregar_al_carrito, args=(nombre, "bebida"))
+            # --- CAMBIO IMPORTANTE: CALLBACK ---
+            st.button(
+                f"AGREGAR 🥤", 
+                key=f"bebida_{nombre}", 
+                on_click=agregar_al_carrito, 
+                args=(nombre, "bebida")
+            )
 
 with tabs[2]:
     st.subheader("🗺️ Encuéntranos")

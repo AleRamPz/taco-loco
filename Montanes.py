@@ -3,25 +3,26 @@ import urllib.parse
 import pandas as pd
 import base64 
 
-# --- 1. CONFIGURACIÓN ---
-st.set_page_config(
-    page_title="EL TACO LOCO", 
-    page_icon="🌮", 
-    layout="wide", 
-    initial_sidebar_state="expanded" # El menú inicia ABIERTO
-)
+# Configuración de la página
+st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
 
-# --- 2. LÓGICA ---
+# --- FUNCIÓN DE CALLBACK (LA SOLUCIÓN A TU PROBLEMA) ---
+# Esta función se ejecuta inmediatamente al hacer clic, sin esperar a que recargue toda la página.
 def agregar_al_carrito(producto, tipo):
     if 'carrito' not in st.session_state:
         st.session_state.carrito = {}
+    
+    # Lógica de agregar
     if producto in st.session_state.carrito:
         st.session_state.carrito[producto] += 1
     else:
         st.session_state.carrito[producto] = 1
+        
+    # Notificación inmediata
     icono = "🔥" if tipo == "taco" else "🧊"
     st.toast(f"¡{producto} agregado!", icon=icono)
 
+# --- FUNCIÓN PARA LEER EL LOGO ---
 def get_img_as_base64(file):
     try:
         with open(file, "rb") as f:
@@ -33,39 +34,11 @@ def get_img_as_base64(file):
 img_path = "imagenes/logo.png" 
 logo_base64 = get_img_as_base64(img_path)
 
-# --- 3. ESTILOS CSS (SOLUCIÓN BOTÓN FLOTANTE) ---
+# --- ESTILOS CSS ---
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
-    /* --- A. OCULTAR LO FEO (DERECHA) --- */
-    [data-testid="stToolbar"] { display: none !important; }
-    [data-testid="stDecoration"] { display: none !important; }
-    [data-testid="stStatusWidget"] { display: none !important; }
-    .stAppDeployButton { display: none !important; }
-    footer { display: none !important; }
-    #MainMenu { display: none !important; }
-
-    /* --- B. HEADER TRANSPARENTE --- */
-    header { 
-        background-color: transparent !important;
-    }
-
-    /* --- C. BOTÓN DEL MENÚ (IZQUIERDA) - ¡ESTO ES LO IMPORTANTE! --- */
-    /* Lo forzamos a ser visible, rojo y con fondo blanco */
-    [data-testid="collapsedControl"] { 
-        display: block !important;
-        color: #D32F2F !important; /* Flecha ROJA */
-        background-color: white !important; /* Fondo BLANCO */
-        border-radius: 50% !important; /* Redondito */
-        padding: 5px !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
-        z-index: 999999 !important;
-        top: 20px !important; /* Ubicación fija */
-        left: 20px !important;
-    }
-
-    /* --- D. ESTILOS DE LA APP --- */
     :root {
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
@@ -73,23 +46,14 @@ st.markdown("""
         --color-crema: #FFF8E1;
     }
 
-    .stApp { 
-        background-color: var(--color-crema); 
-        font-family: 'Poppins', sans-serif;
-    }
-    
-    /* Bajamos el contenido para que el botón del menú no lo tape */
-    .block-container {
-        padding-top: 5rem !important; 
-    }
-
+    .stApp { background-color: var(--color-crema); font-family: 'Poppins', sans-serif; }
     h1, h2, h3, h4, p, div, span, label, li { color: #212121 !important; }
 
-    /* ENCABEZADO */
+    /* HEADER */
     .header-container {
         background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo));
         padding: 2rem;
-        border-radius: 20px;
+        border-radius: 0 0 20px 20px;
         text-align: center;
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
@@ -122,6 +86,7 @@ st.markdown("""
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important;
         color: white !important; border: none;
     }
+    header[data-testid="stHeader"] { background-color: var(--color-naranja) !important; }
 
     /* BOTONES */
     .stButton>button {
@@ -130,9 +95,9 @@ st.markdown("""
         border-radius: 25px; border: none; width: 100%; padding: 0.7rem; font-weight: 900;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s;
     }
-    .stButton>button:active { transform: scale(0.95); }
+    .stButton>button:active { transform: scale(0.95); } /* Efecto de clic */
 
-    /* NOTIFICACIONES */
+    /* NOTIFICACIONES (TOAST) */
     div[data-baseweb="toast"] {
         background-color: var(--color-naranja) !important; color: white !important;
         font-weight: bold; border: 2px solid white;
@@ -152,7 +117,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. DATOS ---
+# --- DATOS DEL MENÚ ---
 menu_tacos = {
     "Taco de Res": {"precio": 14, "img": "imagenes/taco 1.jpg", "desc": "Suave bistec de res."},
     "Taco de Puerco": {"precio": 14, "img": "imagenes/taco 2.jpg", "desc": "Adobado especial."},
@@ -166,7 +131,7 @@ menu_bebidas = {
 }
 menu_completo = {**menu_tacos, **menu_bebidas}
 
-# --- 5. INTERFAZ ---
+# --- HEADER ---
 logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo-esquina">' if logo_base64 else ''
 st.markdown(f"""
     <div class="header-container">
@@ -176,9 +141,10 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# --- 6. SIDEBAR ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.markdown("""<div class="sidebar-header"><h1>🛒 TU PEDIDO</h1></div>""", unsafe_allow_html=True)
+    
     st.markdown("### 📍 Datos de Envío")
     cliente_nombre = st.text_input("Tu Nombre:")
     cliente_direccion = st.text_area("Dirección exacta:")
@@ -186,7 +152,9 @@ with st.sidebar:
     metodo_pago = st.selectbox("Forma de Pago", ["Efectivo 💵", "Transferencia 📱"])
     
     st.divider()
-    if 'carrito' not in st.session_state: st.session_state.carrito = {}
+    
+    if 'carrito' not in st.session_state:
+        st.session_state.carrito = {}
 
     if not st.session_state.carrito:
         st.info("Carrito vacío.")
@@ -210,7 +178,7 @@ with st.sidebar:
 
         if cliente_direccion and cliente_nombre:
             mensaje_codificado = urllib.parse.quote(texto_pedido)
-            numero_whatsapp = "9681171392"
+            numero_whatsapp = "9681171392" 
             link_whatsapp = f"https://wa.me/{numero_whatsapp}?text={mensaje_codificado}"
             st.link_button("📲 Enviar Pedido", link_whatsapp, type="primary")
         else:
@@ -220,7 +188,7 @@ with st.sidebar:
             st.session_state.carrito = {}
             st.rerun()
 
-# --- 7. TABS ---
+# --- PRODUCTOS (USANDO CALLBACKS) ---
 tabs = st.tabs(["🌮 TACOS", "🥤 BEBIDAS", "📍 UBICACIÓN"])
 
 with tabs[0]:
@@ -233,7 +201,15 @@ with tabs[0]:
             st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='desc-prod'>{info['desc']}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
-            st.button(f"AGREGAR 🛒", key=f"taco_{nombre}", on_click=agregar_al_carrito, args=(nombre, "taco"))
+            
+            # --- CAMBIO IMPORTANTE: CALLBACK ---
+            # Usamos on_click para llamar a la función SIN esperar el recargo
+            st.button(
+                f"AGREGAR 🛒", 
+                key=f"taco_{nombre}", 
+                on_click=agregar_al_carrito,  # Llama a la funcion
+                args=(nombre, "taco")         # Le pasa el nombre de ESTE taco
+            )
 
 with tabs[1]:
     st.subheader("🧊 Bebidas Frías")
@@ -244,7 +220,14 @@ with tabs[1]:
             except: st.info("Falta imagen")
             st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
-            st.button(f"AGREGAR 🥤", key=f"bebida_{nombre}", on_click=agregar_al_carrito, args=(nombre, "bebida"))
+            
+            # --- CAMBIO IMPORTANTE: CALLBACK ---
+            st.button(
+                f"AGREGAR 🥤", 
+                key=f"bebida_{nombre}", 
+                on_click=agregar_al_carrito, 
+                args=(nombre, "bebida")
+            )
 
 with tabs[2]:
     st.subheader("🗺️ Encuéntranos")

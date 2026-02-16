@@ -3,26 +3,26 @@ import urllib.parse
 import pandas as pd
 import base64 
 
-# Configuración de la página
+# --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
 
-# --- FUNCIÓN DE CALLBACK (LA SOLUCIÓN A TU PROBLEMA) ---
-# Esta función se ejecuta inmediatamente al hacer clic, sin esperar a que recargue toda la página.
+# --- 2. LÓGICA DEL CARRITO ---
+if 'carrito' not in st.session_state:
+    st.session_state.carrito = {}
+
 def agregar_al_carrito(producto, tipo):
-    if 'carrito' not in st.session_state:
-        st.session_state.carrito = {}
-    
-    # Lógica de agregar
     if producto in st.session_state.carrito:
         st.session_state.carrito[producto] += 1
     else:
         st.session_state.carrito[producto] = 1
-        
-    # Notificación inmediata
+    
+    # Notificación personalizada
     icono = "🔥" if tipo == "taco" else "🧊"
     st.toast(f"¡{producto} agregado!", icon=icono)
 
-# --- FUNCIÓN PARA LEER EL LOGO ---
+def obtener_total_items():
+    return sum(st.session_state.carrito.values())
+
 def get_img_as_base64(file):
     try:
         with open(file, "rb") as f:
@@ -34,22 +34,95 @@ def get_img_as_base64(file):
 img_path = "imagenes/logo.png" 
 logo_base64 = get_img_as_base64(img_path)
 
-# --- ESTILOS CSS ---
+# --- 3. ESTILOS CSS ---
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
+    /* --- VARIABLES --- */
     :root {
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
-        --color-verde: #2E7D32;
         --color-crema: #FFF8E1;
     }
 
-    .stApp { background-color: var(--color-crema); font-family: 'Poppins', sans-serif; }
-    h1, h2, h3, h4, p, div, span, label, li { color: #212121 !important; }
+    /* --- LIMPIEZA DE INTERFAZ (Modo Kiosco) --- */
+    header { visibility: hidden !important; }
+    .stAppDeployButton, [data-testid="stToolbar"], [data-testid="stDecoration"], footer { display: none !important; }
+    
+    /* --- FONDO Y TEXTOS --- */
+    .stApp { 
+        background-color: var(--color-crema); 
+        font-family: 'Poppins', sans-serif;
+        margin-top: -50px;
+    }
+    
+    /* Títulos generales en oscuro */
+    h1, h2, h3, h4, p, div, span, label, li { color: #212121; }
 
-    /* HEADER */
+    /* --- ESTILO DEL MODAL (VENTANA EMERGENTE) --- */
+    /* Fondo Naranja Degradado */
+    div[role="dialog"] {
+        background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo)) !important;
+        color: white !important;
+        border: 2px solid white;
+    }
+    
+    /* Textos dentro del modal (Blanco) */
+    div[role="dialog"] h1, div[role="dialog"] h2, div[role="dialog"] h3, 
+    div[role="dialog"] p, div[role="dialog"] span, div[role="dialog"] div, 
+    div[role="dialog"] label {
+        color: white !important;
+    }
+    
+    /* --- INPUTS Y SELECTBOX DENTRO DEL MODAL (TRANSPARENTES + LETRA BLANCA) --- */
+    
+    /* Campos de Texto (Nombre, Dirección) */
+    div[role="dialog"] input, div[role="dialog"] textarea {
+        background-color: rgba(255, 255, 255, 0.2) !important; /* Transparente */
+        color: white !important; /* Letra blanca */
+        border: 1px solid white !important;
+        border-radius: 10px;
+    }
+    div[role="dialog"] input::placeholder, div[role="dialog"] textarea::placeholder {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    /* Selector de Pago (Cajita) */
+    div[role="dialog"] div[data-baseweb="select"] > div {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+        border: 1px solid white !important;
+    }
+    /* Texto dentro del selector */
+    div[role="dialog"] div[data-baseweb="select"] span {
+        color: white !important;
+    }
+    /* Icono de flechita del selector */
+    div[role="dialog"] div[data-baseweb="select"] svg {
+        fill: white !important;
+    }
+    
+    /* El menú desplegable (las opciones al abrir) tiene que ser blanco con letras negras para leerse bien */
+    div[data-baseweb="popover"] div {
+        background-color: white !important;
+        color: #FF6B00 !important;
+        font-weight: bold;
+    }
+
+    /* --- NOTIFICACIONES (TOAST) --- */
+    div[data-baseweb="toast"] {
+        background-color: var(--color-naranja) !important;
+        color: white !important;
+        font-weight: bold;
+        border: 2px solid white;
+        border-radius: 10px;
+    }
+    div[data-baseweb="toast"] div {
+        color: white !important; 
+    }
+
+    /* --- HEADER --- */
     .header-container {
         background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo));
         padding: 2rem;
@@ -67,57 +140,37 @@ st.markdown("""
     .header-frase-peque { color: white !important; font-weight: 700; font-size: 1.2rem; margin: 0; }
     .header-frase-grande { color: white !important; font-weight: 900; font-size: 3rem; line-height: 1.1; margin: 0; }
 
-    /* SIDEBAR */
-    [data-testid="stSidebar"] { background-color: white; border-right: 1px solid #ddd; }
-    .sidebar-header {
-        background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo));
-        padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .sidebar-header h1 { color: white !important; font-size: 1.8rem; margin: 0; text-transform: uppercase; }
-
-    /* TABS */
-    .stTabs [data-baseweb="tab-list"] { background-color: white; padding: 10px; border-radius: 15px; gap: 10px; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: white; color: var(--color-naranja) !important;
-        border: 2px solid var(--color-naranja); border-radius: 10px; font-weight: 700; padding: 0 20px; height: 50px;
-    }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important;
-        color: white !important; border: none;
-    }
-    header[data-testid="stHeader"] { background-color: var(--color-naranja) !important; }
-
-    /* BOTONES */
+    /* --- BOTONES --- */
     .stButton>button {
+        background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important;
         color: white !important;
-        background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo));
-        border-radius: 25px; border: none; width: 100%; padding: 0.7rem; font-weight: 900;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s;
+        border: none;
+        border-radius: 20px;
+        font-weight: bold;
+        transition: transform 0.1s;
     }
-    .stButton>button:active { transform: scale(0.95); } /* Efecto de clic */
-
-    /* NOTIFICACIONES (TOAST) */
-    div[data-baseweb="toast"] {
-        background-color: var(--color-naranja) !important; color: white !important;
-        font-weight: bold; border: 2px solid white;
-    }
-
-    /* INPUTS */
-    .stTextInput input, .stTextArea textarea, div[data-baseweb="select"] > div {
-        border: 2px solid var(--color-naranja) !important; background-color: white !important;
-        color: black !important; border-radius: 10px;
-    }
-    label { color: var(--color-naranja) !important; font-weight: 700 !important; }
+    .stButton>button:active { transform: scale(0.95); }
     
-    /* TARJETAS */
+    /* Botón del Carrito (Primario) */
+    div[data-testid="column"] button[kind="primary"] {
+        background: white !important;
+        color: var(--color-rojo) !important;
+        border: 2px solid var(--color-rojo) !important;
+    }
+
+    /* --- TABS --- */
+    .stTabs [data-baseweb="tab-list"] { background-color: white; padding: 5px; border-radius: 15px; }
+    .stTabs [data-baseweb="tab"] { color: var(--color-naranja); font-weight: bold; }
+    .stTabs [aria-selected="true"] { background-color: var(--color-naranja); color: white !important; border-radius: 10px; }
+
+    /* --- PRODUCTOS --- */
     [data-testid="column"] { background: white; padding: 15px; border-radius: 15px; border-bottom: 4px solid var(--color-naranja); margin-bottom: 10px; }
     .precio-tag { color: var(--color-verde) !important; font-weight: 900; font-size: 1.5rem; }
-    .nombre-prod { font-size: 1.2rem; font-weight: 800; }
+    .nombre-prod { font-size: 1.2rem; font-weight: 800; color: #212121 !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATOS DEL MENÚ ---
+# --- 4. DATOS ---
 menu_tacos = {
     "Taco de Res": {"precio": 14, "img": "imagenes/taco 1.jpg", "desc": "Suave bistec de res."},
     "Taco de Puerco": {"precio": 14, "img": "imagenes/taco 2.jpg", "desc": "Adobado especial."},
@@ -127,11 +180,54 @@ menu_tacos = {
 menu_bebidas = {
     "Agua de Horchata": {"precio": 20, "img": "imagenes/horchata.png", "desc": "Arroz y canela."},
     "Agua de Jamaica": {"precio": 20, "img": "imagenes/jamaica.png", "desc": "Natural y fresca."},
-    "Zensao": {"precio": 25, "img": "imagenes/senzao.png", "desc": "Tradicional de Coita."}
+    "Senzao": {"precio": 25, "img": "imagenes/senzao.png", "desc": "Tradicional de Coita."}
 }
 menu_completo = {**menu_tacos, **menu_bebidas}
 
-# --- HEADER ---
+# --- 5. VENTANA EMERGENTE (MODAL) ---
+@st.dialog("🛒 TU PEDIDO")
+def mostrar_carrito_modal():
+    if not st.session_state.carrito:
+        st.info("Tu carrito está vacío.")
+    else:
+        total_venta = 0
+        texto_pedido = ""
+        for item, cant in st.session_state.carrito.items():
+            precio_u = menu_completo[item]["precio"]
+            subtotal = cant * precio_u
+            total_venta += subtotal
+            
+            c1, c2, c3 = st.columns([3, 1, 1])
+            c1.markdown(f"**{item}**")
+            c2.markdown(f"x{cant}")
+            c3.markdown(f"${subtotal}")
+            texto_pedido += f"• {cant}x {item} (${subtotal})\n"
+        
+        st.divider()
+        st.markdown(f"<h3 style='text-align: right; color: white !important;'>Total: ${total_venta}</h3>", unsafe_allow_html=True)
+        
+        st.markdown("#### 📍 Datos de Envío")
+        nombre = st.text_input("Nombre:")
+        direccion = st.text_area("Dirección:")
+        ref = st.text_input("Referencia:")
+        
+        # AQUÍ ESTÁN LOS EMOJIS EN EL PAGO
+        pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
+        
+        msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
+        
+        if nombre and direccion:
+            msg_encoded = urllib.parse.quote(msg_final)
+            whatsapp_url = f"https://wa.me/529681171392?text={msg_encoded}"
+            st.link_button("📲 ENVIAR PEDIDO", whatsapp_url, type="primary", use_container_width=True)
+        
+        if st.button("🗑️ Vaciar Carrito"):
+            st.session_state.carrito = {}
+            st.rerun()
+
+# --- 6. INTERFAZ PRINCIPAL ---
+
+# Header
 logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo-esquina">' if logo_base64 else ''
 st.markdown(f"""
     <div class="header-container">
@@ -141,102 +237,59 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# --- SIDEBAR ---
-with st.sidebar:
-    st.markdown("""<div class="sidebar-header"><h1>🛒 TU PEDIDO</h1></div>""", unsafe_allow_html=True)
-    
-    st.markdown("### 📍 Datos de Envío")
-    cliente_nombre = st.text_input("Tu Nombre:")
-    cliente_direccion = st.text_area("Dirección exacta:")
-    cliente_ref = st.text_input("Referencia:")
-    metodo_pago = st.selectbox("Forma de Pago", ["Efectivo 💵", "Transferencia 📱"])
-    
-    st.divider()
-    
-    if 'carrito' not in st.session_state:
-        st.session_state.carrito = {}
+# --- BARRA DE NAVEGACIÓN (TITULO IZQ - CARRITO DER) ---
+col_titulo, col_carrito = st.columns([7, 2])
 
-    if not st.session_state.carrito:
-        st.info("Carrito vacío.")
-    else:
-        total_venta = 0
-        texto_pedido = f"Hola Taco Loco 🌮, soy *{cliente_nombre}*.\n\n*MI PEDIDO:*\n"
-        for item, cant in st.session_state.carrito.items():
-            precio_u = menu_completo[item]["precio"]
-            subtotal = cant * precio_u
-            total_venta += subtotal
-            st.markdown(f"**{cant}x** {item} (${subtotal})")
-            texto_pedido += f"• {cant}x {item} (${subtotal})\n"
+with col_titulo:
+    st.subheader("🔥 Menú del Día")
+
+with col_carrito:
+    # Lógica del botón del carrito
+    total_items = obtener_total_items()
+    label_btn = "🛒 Ver Carrito"
+    tipo_btn = "secondary" # Gris/Blanco por defecto
+    
+    if total_items > 0:
+        label_btn = f"🛒 Ver Carrito ({total_items})"
+        tipo_btn = "primary" # Se pone rojo/naranja cuando hay cosas
         
-        st.divider()
-        st.markdown(f"<h3 style='color: var(--color-rojo) !important;'>Total: ${total_venta} MXN</h3>", unsafe_allow_html=True)
-        
-        texto_pedido += f"\n💰 Total a pagar: ${total_venta}"
-        texto_pedido += f"\n📍 *Dirección:* {cliente_direccion}"
-        texto_pedido += f"\n🏠 *Ref:* {cliente_ref}"
-        texto_pedido += f"\n💸 *Pago con:* {metodo_pago}"
+    if st.button(label_btn, type=tipo_btn, use_container_width=True):
+        mostrar_carrito_modal()
 
-        if cliente_direccion and cliente_nombre:
-            mensaje_codificado = urllib.parse.quote(texto_pedido)
-            numero_whatsapp = "9681171392" 
-            link_whatsapp = f"https://wa.me/{numero_whatsapp}?text={mensaje_codificado}"
-            st.link_button("📲 Enviar Pedido", link_whatsapp, type="primary")
-        else:
-            st.warning("Completa tus datos.")
-            
-        if st.button("🗑️ Borrar Carrito"):
-            st.session_state.carrito = {}
-            st.rerun()
-
-# --- PRODUCTOS (USANDO CALLBACKS) ---
+# Tabs
 tabs = st.tabs(["🌮 TACOS", "🥤 BEBIDAS", "📍 UBICACIÓN"])
 
+# PESTAÑA 1: TACOS
 with tabs[0]:
-    st.subheader("🔥 Nuestros Tacos")
     cols = st.columns(2)
     for i, (nombre, info) in enumerate(menu_tacos.items()):
         with cols[i % 2]:
             try: st.image(info["img"], use_container_width=True)
-            except: st.error("Falta imagen")
+            except: st.error("Sin imagen")
+            
             st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='desc-prod'>{info['desc']}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
             
-            # --- CAMBIO IMPORTANTE: CALLBACK ---
-            # Usamos on_click para llamar a la función SIN esperar el recargo
-            st.button(
-                f"AGREGAR 🛒", 
-                key=f"taco_{nombre}", 
-                on_click=agregar_al_carrito,  # Llama a la funcion
-                args=(nombre, "taco")         # Le pasa el nombre de ESTE taco
-            )
+            # --- BOTÓN CON "+" Y CARRITO ---
+            st.button("AGREGAR + 🛒", key=f"t_{i}", on_click=agregar_al_carrito, args=(nombre, "taco"))
 
+# PESTAÑA 2: BEBIDAS
 with tabs[1]:
-    st.subheader("🧊 Bebidas Frías")
     cols_b = st.columns(3)
     for i, (nombre, info) in enumerate(menu_bebidas.items()):
         with cols_b[i % 3]:
             try: st.image(info["img"], use_container_width=True)
-            except: st.info("Falta imagen")
+            except: st.info("Sin imagen")
+            
             st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
             
-            # --- CAMBIO IMPORTANTE: CALLBACK ---
-            st.button(
-                f"AGREGAR 🥤", 
-                key=f"bebida_{nombre}", 
-                on_click=agregar_al_carrito, 
-                args=(nombre, "bebida")
-            )
+            # --- BOTÓN CON "+" Y CARRITO ---
+            st.button("AGREGAR + 🛒", key=f"b_{i}", on_click=agregar_al_carrito, args=(nombre, "bebida"))
 
+# PESTAÑA 3: UBICACIÓN
 with tabs[2]:
-    st.subheader("🗺️ Encuéntranos")
-    latitud_coita = 16.753554732500405
-    longitud_coita = -93.37373160552643
-    st.map(pd.DataFrame({'lat': [latitud_coita], 'lon': [longitud_coita]}), zoom=15)
-    st.markdown("""
-        <div style='background: white; padding: 20px; border-radius: 15px; border-left: 5px solid #FF6B00;'>
-            <h4>🕒 Horario</h4>
-            <p>Lunes a Domingo<br><strong>6:00 PM - 12:00 AM</strong></p>
-        </div>
-        """, unsafe_allow_html=True)
+    st.info("🕒 Horario: 6:00 PM - 12:00 AM")
+    lat, lon = 16.753554732500405, -93.37373160552643
+    st.map(pd.DataFrame({'lat': [lat], 'lon': [lon]}), zoom=15)

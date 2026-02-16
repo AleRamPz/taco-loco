@@ -49,18 +49,26 @@ st.markdown("""
         height: 60px !important;
     }
     
-    /* 2. Ocultamos SOLO lo que no queremos ver */
-    [data-testid="stToolbar"] { visibility: hidden !important; }
+    /* 2. Ocultamos SOLO los botones internos del toolbar, NO el toolbar completo */
+    [data-testid="stToolbarActions"] { display: none !important; }
     [data-testid="stDecoration"] { display: none !important; }
     footer { display: none !important; }
     .stAppDeployButton { display: none !important; }
-    
-    /* 3. ✅ FIX: visibility: visible cancela la herencia de visibility: hidden del toolbar */
+    /* Ocultar íconos de Github y deploy por si usan otras clases */
+    [data-testid="stToolbar"] button { display: none !important; }
+
+    /* 3. ✅ FIX REAL: El botón del menú lateral se muestra explícitamente */
     [data-testid="collapsedControl"] { 
-        display: block !important;
+        display: flex !important;
         visibility: visible !important;
+        opacity: 1 !important;
         color: white !important;
         z-index: 1000001 !important;
+    }
+    [data-testid="collapsedControl"] button {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
     /* --- ESTILOS GENERALES --- */

@@ -35,7 +35,7 @@ def get_img_as_base64(file):
 img_path = "imagenes/logo.png" 
 logo_base64 = get_img_as_base64(img_path)
 
-# --- 3. ESTILOS CSS (LA SOLUCIÓN DE Z-INDEX) ---
+# --- 3. ESTILOS CSS ---
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 
@@ -45,20 +45,21 @@ st.markdown("""
     /* 1. El Header de Streamlit debe estar ENCIMA de todo (z-index alto) */
     header { 
         background-color: transparent !important;
-        z-index: 1000000 !important; /* Capa super alta para que nada lo tape */
-        height: 60px !important; /* Altura fija para asegurar que el botón quepa */
+        z-index: 1000000 !important;
+        height: 60px !important;
     }
     
-    /* 2. Ocultamos SOLO lo que no queremos ver (derecha) */
+    /* 2. Ocultamos SOLO lo que no queremos ver */
     [data-testid="stToolbar"] { visibility: hidden !important; }
     [data-testid="stDecoration"] { display: none !important; }
     footer { display: none !important; }
     .stAppDeployButton { display: none !important; }
     
-    /* 3. Aseguramos que el botón del menú sea visible y de color BLANCO o NEGRO según contraste */
+    /* 3. ✅ FIX: visibility: visible cancela la herencia de visibility: hidden del toolbar */
     [data-testid="collapsedControl"] { 
-        display: block !important; 
-        color: white !important; /* Forzamos color para que se vea sobre el naranja */
+        display: block !important;
+        visibility: visible !important;
+        color: white !important;
         z-index: 1000001 !important;
     }
     
@@ -73,7 +74,6 @@ st.markdown("""
     .stApp { 
         background-color: var(--color-crema); 
         font-family: 'Poppins', sans-serif;
-        /* Subimos el contenido para que quede debajo del header transparente */
         margin-top: -60px; 
     }
     h1, h2, h3, h4, p, div, span, label, li { color: #212121 !important; }
@@ -82,16 +82,16 @@ st.markdown("""
     .header-container {
         background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo));
         padding: 2rem;
-        padding-top: 3rem; /* Espacio extra arriba para que el botón del menú no tape el texto */
+        padding-top: 3rem;
         border-radius: 0 0 20px 20px;
         text-align: center;
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
         position: relative;
-        z-index: 1; /* Capa baja, debajo del botón del menú */
+        z-index: 1;
     }
     .logo-esquina {
-        position: absolute; top: 15px; left: 60px; /* Moví el logo un poco a la derecha para no chocar con el menú */
+        position: absolute; top: 15px; left: 60px;
         width: 80px;
         border-radius: 50%; border: 3px solid white;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
@@ -103,7 +103,7 @@ st.markdown("""
     [data-testid="stSidebar"] { 
         background-color: white; 
         border-right: 1px solid #ddd;
-        z-index: 1000002 !important; /* Sidebar encima de todo */
+        z-index: 1000002 !important;
     }
     .sidebar-header {
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo));
@@ -262,9 +262,6 @@ with tabs[2]:
             <p>Lunes a Domingo<br><strong>6:00 PM - 12:00 AM</strong></p>
         </div>
         """, unsafe_allow_html=True)
-
-
-
 
 
 

@@ -3,12 +3,12 @@ import urllib.parse
 import pandas as pd
 import base64 
 
-# --- 1. CONFIGURACIÓN INICIAL (ESTO ABRE EL MENÚ AL INICIO) ---
+# --- 1. CONFIGURACIÓN: FORZAR QUE EL MENÚ APAREZCA ABIERTO ---
 st.set_page_config(
     page_title="EL TACO LOCO", 
     page_icon="🌮", 
     layout="wide", 
-    initial_sidebar_state="expanded" # <--- ESTO FUERZA QUE EL MENÚ SE ABRA SOLO
+    initial_sidebar_state="expanded" 
 )
 
 # --- 2. FUNCIONES LÓGICAS ---
@@ -35,37 +35,34 @@ def get_img_as_base64(file):
 img_path = "imagenes/logo.png" 
 logo_base64 = get_img_as_base64(img_path)
 
-# --- 3. ESTILOS CSS (CIRUGÍA LÁSER PARA QUE NO DESAPAREZCA EL MENÚ) ---
+# --- 3. ESTILOS CSS (LA SOLUCIÓN DE Z-INDEX) ---
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
-    /* --- AQUÍ ESTÁ LA CORRECCIÓN --- */
+    /* --- ARREGLO DEL MENÚ --- */
     
-    /* 1. Ocultar SOLAMENTE los botones feos de la derecha (GitHub, Deploy, Menú) */
-    [data-testid="stToolbar"] { 
-        visibility: hidden !important; 
-        right: 2rem;
-    }
-    
-    /* 2. Ocultar la línea de colores de decoración */
-    [data-testid="stDecoration"] { 
-        display: none !important; 
-    }
-    
-    /* 3. Ocultar el pie de página "Made with Streamlit" */
-    footer { 
-        visibility: hidden !important; 
-    }
-
-    /* 4. IMPORTANTE: NO OCULTAMOS EL HEADER COMPLETO
-       Lo hacemos transparente para que el botón del menú (izquierda) SIGA VISIBLE */
+    /* 1. El Header de Streamlit debe estar ENCIMA de todo (z-index alto) */
     header { 
-        background-color: transparent !important; 
+        background-color: transparent !important;
+        z-index: 1000000 !important; /* Capa super alta para que nada lo tape */
+        height: 60px !important; /* Altura fija para asegurar que el botón quepa */
     }
-
-    /* ---------------------------------- */
-
+    
+    /* 2. Ocultamos SOLO lo que no queremos ver (derecha) */
+    [data-testid="stToolbar"] { visibility: hidden !important; }
+    [data-testid="stDecoration"] { display: none !important; }
+    footer { display: none !important; }
+    .stAppDeployButton { display: none !important; }
+    
+    /* 3. Aseguramos que el botón del menú sea visible y de color BLANCO o NEGRO según contraste */
+    [data-testid="collapsedControl"] { 
+        display: block !important; 
+        color: white !important; /* Forzamos color para que se vea sobre el naranja */
+        z-index: 1000001 !important;
+    }
+    
+    /* --- ESTILOS GENERALES --- */
     :root {
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
@@ -76,6 +73,8 @@ st.markdown("""
     .stApp { 
         background-color: var(--color-crema); 
         font-family: 'Poppins', sans-serif;
+        /* Subimos el contenido para que quede debajo del header transparente */
+        margin-top: -60px; 
     }
     h1, h2, h3, h4, p, div, span, label, li { color: #212121 !important; }
 
@@ -83,14 +82,17 @@ st.markdown("""
     .header-container {
         background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo));
         padding: 2rem;
+        padding-top: 3rem; /* Espacio extra arriba para que el botón del menú no tape el texto */
         border-radius: 0 0 20px 20px;
         text-align: center;
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
         position: relative;
+        z-index: 1; /* Capa baja, debajo del botón del menú */
     }
     .logo-esquina {
-        position: absolute; top: 15px; left: 20px; width: 80px;
+        position: absolute; top: 15px; left: 60px; /* Moví el logo un poco a la derecha para no chocar con el menú */
+        width: 80px;
         border-radius: 50%; border: 3px solid white;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
@@ -98,7 +100,11 @@ st.markdown("""
     .header-frase-grande { color: white !important; font-weight: 900; font-size: 3rem; line-height: 1.1; margin: 0; }
 
     /* SIDEBAR */
-    [data-testid="stSidebar"] { background-color: white; border-right: 1px solid #ddd; }
+    [data-testid="stSidebar"] { 
+        background-color: white; 
+        border-right: 1px solid #ddd;
+        z-index: 1000002 !important; /* Sidebar encima de todo */
+    }
     .sidebar-header {
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo));
         padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;

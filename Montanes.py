@@ -8,19 +8,17 @@ st.set_page_config(
     page_title="EL TACO LOCO", 
     page_icon="🌮", 
     layout="wide", 
-    initial_sidebar_state="expanded" 
+    initial_sidebar_state="expanded" # El menú inicia ABIERTO
 )
 
 # --- 2. LÓGICA ---
 def agregar_al_carrito(producto, tipo):
     if 'carrito' not in st.session_state:
         st.session_state.carrito = {}
-    
     if producto in st.session_state.carrito:
         st.session_state.carrito[producto] += 1
     else:
         st.session_state.carrito[producto] = 1
-        
     icono = "🔥" if tipo == "taco" else "🧊"
     st.toast(f"¡{producto} agregado!", icon=icono)
 
@@ -35,30 +33,39 @@ def get_img_as_base64(file):
 img_path = "imagenes/logo.png" 
 logo_base64 = get_img_as_base64(img_path)
 
-# --- 3. ESTILOS CSS (ESTRATEGIA "ESPACIO SEGURO") ---
+# --- 3. ESTILOS CSS (SOLUCIÓN BOTÓN FLOTANTE) ---
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
-    /* 1. HEADER LIMPIO (Barra blanca arriba) */
-    header { 
-        background-color: white !important;
-        height: 60px !important;
-        z-index: 100 !important;
-    }
-    
-    /* 2. Ocultar botones de la derecha (GitHub, etc) */
-    [data-testid="stToolbar"] { visibility: hidden !important; }
+    /* --- A. OCULTAR LO FEO (DERECHA) --- */
+    [data-testid="stToolbar"] { display: none !important; }
     [data-testid="stDecoration"] { display: none !important; }
+    [data-testid="stStatusWidget"] { display: none !important; }
+    .stAppDeployButton { display: none !important; }
     footer { display: none !important; }
-    
-    /* 3. Asegurar que el botón del menú sea NEGRO y visible */
-    [data-testid="collapsedControl"] { 
-        color: #FF6B00 !important; /* Lo puse naranja para que combine */
-        display: block !important;
+    #MainMenu { display: none !important; }
+
+    /* --- B. HEADER TRANSPARENTE --- */
+    header { 
+        background-color: transparent !important;
     }
 
-    /* --- VARIABLES --- */
+    /* --- C. BOTÓN DEL MENÚ (IZQUIERDA) - ¡ESTO ES LO IMPORTANTE! --- */
+    /* Lo forzamos a ser visible, rojo y con fondo blanco */
+    [data-testid="collapsedControl"] { 
+        display: block !important;
+        color: #D32F2F !important; /* Flecha ROJA */
+        background-color: white !important; /* Fondo BLANCO */
+        border-radius: 50% !important; /* Redondito */
+        padding: 5px !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
+        z-index: 999999 !important;
+        top: 20px !important; /* Ubicación fija */
+        left: 20px !important;
+    }
+
+    /* --- D. ESTILOS DE LA APP --- */
     :root {
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
@@ -69,16 +76,20 @@ st.markdown("""
     .stApp { 
         background-color: var(--color-crema); 
         font-family: 'Poppins', sans-serif;
-        /* YA NO USAMOS MARGEN NEGATIVO. Dejamos que baje natural. */
-        margin-top: 20px; 
     }
+    
+    /* Bajamos el contenido para que el botón del menú no lo tape */
+    .block-container {
+        padding-top: 5rem !important; 
+    }
+
     h1, h2, h3, h4, p, div, span, label, li { color: #212121 !important; }
 
-    /* ENCABEZADO PERSONALIZADO */
+    /* ENCABEZADO */
     .header-container {
         background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo));
         padding: 2rem;
-        border-radius: 20px; /* Ahora es redondeado completo */
+        border-radius: 20px;
         text-align: center;
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
@@ -168,7 +179,6 @@ st.markdown(f"""
 # --- 6. SIDEBAR ---
 with st.sidebar:
     st.markdown("""<div class="sidebar-header"><h1>🛒 TU PEDIDO</h1></div>""", unsafe_allow_html=True)
-    
     st.markdown("### 📍 Datos de Envío")
     cliente_nombre = st.text_input("Tu Nombre:")
     cliente_direccion = st.text_area("Dirección exacta:")
@@ -176,9 +186,7 @@ with st.sidebar:
     metodo_pago = st.selectbox("Forma de Pago", ["Efectivo 💵", "Transferencia 📱"])
     
     st.divider()
-    
-    if 'carrito' not in st.session_state:
-        st.session_state.carrito = {}
+    if 'carrito' not in st.session_state: st.session_state.carrito = {}
 
     if not st.session_state.carrito:
         st.info("Carrito vacío.")
@@ -212,7 +220,7 @@ with st.sidebar:
             st.session_state.carrito = {}
             st.rerun()
 
-# --- 7. TABS Y PRODUCTOS ---
+# --- 7. TABS ---
 tabs = st.tabs(["🌮 TACOS", "🥤 BEBIDAS", "📍 UBICACIÓN"])
 
 with tabs[0]:
@@ -249,4 +257,3 @@ with tabs[2]:
             <p>Lunes a Domingo<br><strong>6:00 PM - 12:00 AM</strong></p>
         </div>
         """, unsafe_allow_html=True)
-

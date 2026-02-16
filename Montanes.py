@@ -3,13 +3,12 @@ import urllib.parse
 import pandas as pd
 import base64 
 
-# --- 1. CONFIGURACIÓN DE PÁGINA ---
-# AGREGAMOS 'initial_sidebar_state="expanded"' PARA QUE EL MENÚ SIEMPRE ESTÉ ABIERTO
+# --- 1. CONFIGURACIÓN INICIAL (ESTO ABRE EL MENÚ AL INICIO) ---
 st.set_page_config(
     page_title="EL TACO LOCO", 
     page_icon="🌮", 
     layout="wide", 
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded" # <--- ESTO FUERZA QUE EL MENÚ SE ABRA SOLO
 )
 
 # --- 2. FUNCIONES LÓGICAS ---
@@ -36,37 +35,37 @@ def get_img_as_base64(file):
 img_path = "imagenes/logo.png" 
 logo_base64 = get_img_as_base64(img_path)
 
-# --- 3. ESTILOS CSS CORREGIDOS ---
+# --- 3. ESTILOS CSS (CIRUGÍA LÁSER PARA QUE NO DESAPAREZCA EL MENÚ) ---
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
-    /* --- CORRECCIÓN: OCULTAR SOLO BOTONES, NO EL HEADER COMPLETO --- */
+    /* --- AQUÍ ESTÁ LA CORRECCIÓN --- */
     
-    /* 1. Ocultar botones de GitHub, Deploy, etc. */
-    .stAppDeployButton { display: none !important; }
-    [data-testid="stToolbar"] { visibility: hidden !important; }
-    [data-testid="stDecoration"] { display: none !important; }
-    [data-testid="stStatusWidget"] { display: none !important; }
-    #MainMenu { visibility: hidden !important; }
-    footer { visibility: hidden !important; }
-
-    /* 2. Hacer el Header transparente para que no estorbe, pero que EXISTA */
-    header[data-testid="stHeader"] {
-        background-color: transparent !important;
-        z-index: 1; /* Nivel bajo para que no tape nada */
+    /* 1. Ocultar SOLAMENTE los botones feos de la derecha (GitHub, Deploy, Menú) */
+    [data-testid="stToolbar"] { 
+        visibility: hidden !important; 
+        right: 2rem;
+    }
+    
+    /* 2. Ocultar la línea de colores de decoración */
+    [data-testid="stDecoration"] { 
+        display: none !important; 
+    }
+    
+    /* 3. Ocultar el pie de página "Made with Streamlit" */
+    footer { 
+        visibility: hidden !important; 
     }
 
-    /* 3. Forzar que la Barra Lateral (Pedidos) sea visible y esté encima */
-    [data-testid="stSidebar"] {
-        display: block !important;
-        visibility: visible !important;
-        z-index: 99999 !important; /* Prioridad máxima */
-        background-color: white;
-        border-right: 1px solid #ddd;
+    /* 4. IMPORTANTE: NO OCULTAMOS EL HEADER COMPLETO
+       Lo hacemos transparente para que el botón del menú (izquierda) SIGA VISIBLE */
+    header { 
+        background-color: transparent !important; 
     }
 
-    /* --- VARIABLES --- */
+    /* ---------------------------------- */
+
     :root {
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
@@ -74,7 +73,6 @@ st.markdown("""
         --color-crema: #FFF8E1;
     }
 
-    /* --- ESTILOS GENERALES --- */
     .stApp { 
         background-color: var(--color-crema); 
         font-family: 'Poppins', sans-serif;
@@ -90,7 +88,6 @@ st.markdown("""
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
         position: relative;
-        z-index: 10; /* Encima del fondo, debajo del sidebar */
     }
     .logo-esquina {
         position: absolute; top: 15px; left: 20px; width: 80px;
@@ -100,7 +97,8 @@ st.markdown("""
     .header-frase-peque { color: white !important; font-weight: 700; font-size: 1.2rem; margin: 0; }
     .header-frase-grande { color: white !important; font-weight: 900; font-size: 3rem; line-height: 1.1; margin: 0; }
 
-    /* SIDEBAR (TÍTULO DE PEDIDOS) */
+    /* SIDEBAR */
+    [data-testid="stSidebar"] { background-color: white; border-right: 1px solid #ddd; }
     .sidebar-header {
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo));
         padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;
@@ -258,6 +256,7 @@ with tabs[2]:
             <p>Lunes a Domingo<br><strong>6:00 PM - 12:00 AM</strong></p>
         </div>
         """, unsafe_allow_html=True)
+
 
 
 

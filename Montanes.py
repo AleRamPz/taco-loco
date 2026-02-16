@@ -3,25 +3,28 @@ import urllib.parse
 import pandas as pd
 import base64 
 
-# Configuración de la página
-st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
+# --- 1. CONFIGURACIÓN DE PÁGINA ---
+# AGREGAMOS 'initial_sidebar_state="expanded"' PARA QUE EL MENÚ SIEMPRE ESTÉ ABIERTO
+st.set_page_config(
+    page_title="EL TACO LOCO", 
+    page_icon="🌮", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
+)
 
-# --- FUNCIÓN DE CALLBACK (CERO LAG) ---
+# --- 2. FUNCIONES LÓGICAS ---
 def agregar_al_carrito(producto, tipo):
     if 'carrito' not in st.session_state:
         st.session_state.carrito = {}
     
-    # Lógica de agregar
     if producto in st.session_state.carrito:
         st.session_state.carrito[producto] += 1
     else:
         st.session_state.carrito[producto] = 1
         
-    # Notificación inmediata
     icono = "🔥" if tipo == "taco" else "🧊"
     st.toast(f"¡{producto} agregado!", icon=icono)
 
-# --- FUNCIÓN PARA LEER EL LOGO ---
 def get_img_as_base64(file):
     try:
         with open(file, "rb") as f:
@@ -33,22 +36,37 @@ def get_img_as_base64(file):
 img_path = "imagenes/logo.png" 
 logo_base64 = get_img_as_base64(img_path)
 
-# --- ESTILOS CSS (MODO KIOSCO ACTIVADO) ---
+# --- 3. ESTILOS CSS CORREGIDOS ---
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
-    /* --- 1. MODO KIOSCO: OCULTAR TODO LO DE STREAMLIT --- */
-    header { visibility: hidden !important; }
-    #MainMenu { visibility: hidden !important; }
-    footer { visibility: hidden !important; }
+    /* --- CORRECCIÓN: OCULTAR SOLO BOTONES, NO EL HEADER COMPLETO --- */
+    
+    /* 1. Ocultar botones de GitHub, Deploy, etc. */
     .stAppDeployButton { display: none !important; }
-    [data-testid="stToolbar"] { display: none !important; }
-    [data-testid="stHeader"] { display: none !important; }
+    [data-testid="stToolbar"] { visibility: hidden !important; }
     [data-testid="stDecoration"] { display: none !important; }
     [data-testid="stStatusWidget"] { display: none !important; }
+    #MainMenu { visibility: hidden !important; }
+    footer { visibility: hidden !important; }
 
-    /* --- 2. VARIABLES Y ESTILOS GENERALES --- */
+    /* 2. Hacer el Header transparente para que no estorbe, pero que EXISTA */
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+        z-index: 1; /* Nivel bajo para que no tape nada */
+    }
+
+    /* 3. Forzar que la Barra Lateral (Pedidos) sea visible y esté encima */
+    [data-testid="stSidebar"] {
+        display: block !important;
+        visibility: visible !important;
+        z-index: 99999 !important; /* Prioridad máxima */
+        background-color: white;
+        border-right: 1px solid #ddd;
+    }
+
+    /* --- VARIABLES --- */
     :root {
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
@@ -56,15 +74,14 @@ st.markdown("""
         --color-crema: #FFF8E1;
     }
 
+    /* --- ESTILOS GENERALES --- */
     .stApp { 
         background-color: var(--color-crema); 
         font-family: 'Poppins', sans-serif;
-        /* ESTO ES CLAVE: Sube el contenido para tapar el hueco de la barra oculta */
-        margin-top: -50px; 
     }
     h1, h2, h3, h4, p, div, span, label, li { color: #212121 !important; }
 
-    /* HEADER */
+    /* ENCABEZADO */
     .header-container {
         background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo));
         padding: 2rem;
@@ -73,7 +90,7 @@ st.markdown("""
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
         position: relative;
-        z-index: 9999;
+        z-index: 10; /* Encima del fondo, debajo del sidebar */
     }
     .logo-esquina {
         position: absolute; top: 15px; left: 20px; width: 80px;
@@ -83,8 +100,7 @@ st.markdown("""
     .header-frase-peque { color: white !important; font-weight: 700; font-size: 1.2rem; margin: 0; }
     .header-frase-grande { color: white !important; font-weight: 900; font-size: 3rem; line-height: 1.1; margin: 0; }
 
-    /* SIDEBAR */
-    [data-testid="stSidebar"] { background-color: white; border-right: 1px solid #ddd; }
+    /* SIDEBAR (TÍTULO DE PEDIDOS) */
     .sidebar-header {
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo));
         padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;
@@ -102,7 +118,7 @@ st.markdown("""
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important;
         color: white !important; border: none;
     }
-    
+
     /* BOTONES */
     .stButton>button {
         color: white !important;
@@ -110,9 +126,9 @@ st.markdown("""
         border-radius: 25px; border: none; width: 100%; padding: 0.7rem; font-weight: 900;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s;
     }
-    .stButton>button:active { transform: scale(0.95); } 
+    .stButton>button:active { transform: scale(0.95); }
 
-    /* NOTIFICACIONES (TOAST) */
+    /* NOTIFICACIONES */
     div[data-baseweb="toast"] {
         background-color: var(--color-naranja) !important; color: white !important;
         font-weight: bold; border: 2px solid white;
@@ -132,7 +148,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATOS DEL MENÚ ---
+# --- 4. DATOS DEL MENÚ ---
 menu_tacos = {
     "Taco de Res": {"precio": 14, "img": "imagenes/taco 1.jpg", "desc": "Suave bistec de res."},
     "Taco de Puerco": {"precio": 14, "img": "imagenes/taco 2.jpg", "desc": "Adobado especial."},
@@ -146,7 +162,7 @@ menu_bebidas = {
 }
 menu_completo = {**menu_tacos, **menu_bebidas}
 
-# --- HEADER ---
+# --- 5. INTERFAZ: ENCABEZADO ---
 logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo-esquina">' if logo_base64 else ''
 st.markdown(f"""
     <div class="header-container">
@@ -156,7 +172,7 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# --- SIDEBAR ---
+# --- 6. INTERFAZ: BARRA LATERAL (CARRITO) ---
 with st.sidebar:
     st.markdown("""<div class="sidebar-header"><h1>🛒 TU PEDIDO</h1></div>""", unsafe_allow_html=True)
     
@@ -193,7 +209,7 @@ with st.sidebar:
 
         if cliente_direccion and cliente_nombre:
             mensaje_codificado = urllib.parse.quote(texto_pedido)
-            numero_whatsapp = "9681171392" 
+            numero_whatsapp = "9681171392"
             link_whatsapp = f"https://wa.me/{numero_whatsapp}?text={mensaje_codificado}"
             st.link_button("📲 Enviar Pedido", link_whatsapp, type="primary")
         else:
@@ -203,7 +219,7 @@ with st.sidebar:
             st.session_state.carrito = {}
             st.rerun()
 
-# --- PRODUCTOS (USANDO CALLBACKS) ---
+# --- 7. INTERFAZ: PRODUCTOS ---
 tabs = st.tabs(["🌮 TACOS", "🥤 BEBIDAS", "📍 UBICACIÓN"])
 
 with tabs[0]:
@@ -217,13 +233,7 @@ with tabs[0]:
             st.markdown(f"<div class='desc-prod'>{info['desc']}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
             
-            # --- CALLBACK ---
-            st.button(
-                f"AGREGAR 🛒", 
-                key=f"taco_{nombre}", 
-                on_click=agregar_al_carrito, 
-                args=(nombre, "taco")
-            )
+            st.button(f"AGREGAR 🛒", key=f"taco_{nombre}", on_click=agregar_al_carrito, args=(nombre, "taco"))
 
 with tabs[1]:
     st.subheader("🧊 Bebidas Frías")
@@ -235,17 +245,10 @@ with tabs[1]:
             st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
             
-            # --- CALLBACK ---
-            st.button(
-                f"AGREGAR 🥤", 
-                key=f"bebida_{nombre}", 
-                on_click=agregar_al_carrito, 
-                args=(nombre, "bebida")
-            )
+            st.button(f"AGREGAR 🥤", key=f"bebida_{nombre}", on_click=agregar_al_carrito, args=(nombre, "bebida"))
 
 with tabs[2]:
     st.subheader("🗺️ Encuéntranos")
-    # TUS COORDENADAS ORIGINALES
     latitud_coita = 16.753554732500405
     longitud_coita = -93.37373160552643
     st.map(pd.DataFrame({'lat': [latitud_coita], 'lon': [longitud_coita]}), zoom=15)
@@ -255,6 +258,7 @@ with tabs[2]:
             <p>Lunes a Domingo<br><strong>6:00 PM - 12:00 AM</strong></p>
         </div>
         """, unsafe_allow_html=True)
+
 
 
 

@@ -46,25 +46,29 @@ st.markdown("""
 .stApp { background-color: var(--color-crema); font-family: 'Poppins', sans-serif; }
 h1, h2, h3, h4, p, div, span, label, li { color: #212121 !important; }
 
-/* ========================= */
-/* OCULTAR HEADER STREAMLIT  */
-/* ========================= */
+/* ================================= */
+/* OCULTAR ELEMENTOS STREAMLIT CLOUD */
+/* ================================= */
 
 /* Oculta menú de tres puntos */
-#MainMenu { visibility: hidden; }
+#MainMenu {visibility: hidden;}
 
 /* Oculta footer */
-footer { visibility: hidden; }
+footer {visibility: hidden;}
 
-/* Oculta barra superior completa (logo GitHub / Deploy) */
-header[data-testid="stHeader"] { display: none; }
+/* Oculta toolbar superior (GitHub / Deploy / botones) */
+[data-testid="stToolbar"] {
+    display: none !important;
+}
 
-/* Quita espacio vacío superior */
-.block-container { padding-top: 1rem; }
+/* Ajusta espacio superior */
+.block-container {
+    padding-top: 1rem;
+}
 
-/* ========================= */
-/* TU DISEÑO ORIGINAL        */
-/* ========================= */
+/* ================================= */
+/* TU DISEÑO PERSONALIZADO           */
+/* ================================= */
 
 /* HEADER */
 .header-container {
@@ -136,6 +140,3 @@ label { color: var(--color-naranja) !important; font-weight: 700 !important; }
 
 </style>
 """, unsafe_allow_html=True)
-
-
-

@@ -6,8 +6,7 @@ import base64
 # Configuración de la página
 st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
 
-# --- FUNCIÓN DE CALLBACK (LA SOLUCIÓN A TU PROBLEMA) ---
-# Esta función se ejecuta inmediatamente al hacer clic, sin esperar a que recargue toda la página.
+# --- FUNCIÓN DE CALLBACK (CERO LAG) ---
 def agregar_al_carrito(producto, tipo):
     if 'carrito' not in st.session_state:
         st.session_state.carrito = {}
@@ -34,11 +33,22 @@ def get_img_as_base64(file):
 img_path = "imagenes/logo.png" 
 logo_base64 = get_img_as_base64(img_path)
 
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS (MODO KIOSCO ACTIVADO) ---
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
+    /* --- 1. MODO KIOSCO: OCULTAR TODO LO DE STREAMLIT --- */
+    header { visibility: hidden !important; }
+    #MainMenu { visibility: hidden !important; }
+    footer { visibility: hidden !important; }
+    .stAppDeployButton { display: none !important; }
+    [data-testid="stToolbar"] { display: none !important; }
+    [data-testid="stHeader"] { display: none !important; }
+    [data-testid="stDecoration"] { display: none !important; }
+    [data-testid="stStatusWidget"] { display: none !important; }
+
+    /* --- 2. VARIABLES Y ESTILOS GENERALES --- */
     :root {
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
@@ -46,7 +56,12 @@ st.markdown("""
         --color-crema: #FFF8E1;
     }
 
-    .stApp { background-color: var(--color-crema); font-family: 'Poppins', sans-serif; }
+    .stApp { 
+        background-color: var(--color-crema); 
+        font-family: 'Poppins', sans-serif;
+        /* ESTO ES CLAVE: Sube el contenido para tapar el hueco de la barra oculta */
+        margin-top: -50px; 
+    }
     h1, h2, h3, h4, p, div, span, label, li { color: #212121 !important; }
 
     /* HEADER */
@@ -58,6 +73,7 @@ st.markdown("""
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
         position: relative;
+        z-index: 9999;
     }
     .logo-esquina {
         position: absolute; top: 15px; left: 20px; width: 80px;
@@ -86,8 +102,7 @@ st.markdown("""
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important;
         color: white !important; border: none;
     }
-    header[data-testid="stHeader"] { background-color: var(--color-naranja) !important; }
-
+    
     /* BOTONES */
     .stButton>button {
         color: white !important;
@@ -95,7 +110,7 @@ st.markdown("""
         border-radius: 25px; border: none; width: 100%; padding: 0.7rem; font-weight: 900;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s;
     }
-    .stButton>button:active { transform: scale(0.95); } /* Efecto de clic */
+    .stButton>button:active { transform: scale(0.95); } 
 
     /* NOTIFICACIONES (TOAST) */
     div[data-baseweb="toast"] {
@@ -202,13 +217,12 @@ with tabs[0]:
             st.markdown(f"<div class='desc-prod'>{info['desc']}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
             
-            # --- CAMBIO IMPORTANTE: CALLBACK ---
-            # Usamos on_click para llamar a la función SIN esperar el recargo
+            # --- CALLBACK ---
             st.button(
                 f"AGREGAR 🛒", 
                 key=f"taco_{nombre}", 
-                on_click=agregar_al_carrito,  # Llama a la funcion
-                args=(nombre, "taco")         # Le pasa el nombre de ESTE taco
+                on_click=agregar_al_carrito, 
+                args=(nombre, "taco")
             )
 
 with tabs[1]:
@@ -221,7 +235,7 @@ with tabs[1]:
             st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
             
-            # --- CAMBIO IMPORTANTE: CALLBACK ---
+            # --- CALLBACK ---
             st.button(
                 f"AGREGAR 🥤", 
                 key=f"bebida_{nombre}", 
@@ -231,6 +245,7 @@ with tabs[1]:
 
 with tabs[2]:
     st.subheader("🗺️ Encuéntranos")
+    # TUS COORDENADAS ORIGINALES
     latitud_coita = 16.753554732500405
     longitud_coita = -93.37373160552643
     st.map(pd.DataFrame({'lat': [latitud_coita], 'lon': [longitud_coita]}), zoom=15)

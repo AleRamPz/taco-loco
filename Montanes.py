@@ -2,7 +2,7 @@ import streamlit as st
 import urllib.parse
 import pandas as pd
 import base64 
-import requests  # <--- NUEVA LIBRERÍA PARA HABLAR CON GOOGLE
+import requests  # Librería para conectarnos a Google Sheets
 
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
@@ -155,20 +155,16 @@ menu_bebidas = {
 }
 menu_completo = {**menu_tacos, **menu_bebidas}
 
-# --- 5. VENTANA EMERGENTE (MODAL CON BASE DE DATOS) ---
+# --- 5. VENTANA EMERGENTE (MODAL CON 1 SOLO CLIC) ---
 @st.dialog("🛒 TU PEDIDO")
 def mostrar_carrito_modal():
-    
-    # Manejamos el estado del formulario para que no se borre al guardar
-    if 'pedido_guardado' not in st.session_state:
-        st.session_state.pedido_guardado = False
 
     if not st.session_state.carrito:
         st.info("Tu carrito está vacío.")
     else:
         total_venta = 0
         texto_pedido = ""
-        texto_para_excel = "" # Guardamos el pedido resumido para tu base de datos
+        texto_para_excel = ""
         
         for item, cant in st.session_state.carrito.items():
             precio_u = menu_completo[item]["precio"]
@@ -185,69 +181,48 @@ def mostrar_carrito_modal():
         st.divider()
         st.markdown(f"<h3 style='text-align: right; color: white !important;'>Total: ${total_venta}</h3>", unsafe_allow_html=True)
         
-        # Si el pedido aún no se ha guardado en la base de datos, mostramos el formulario
-        if not st.session_state.pedido_guardado:
-            st.markdown("#### 📍 Datos de Envío")
-            nombre = st.text_input("Nombre:")
-            direccion = st.text_area("Dirección exacta:")
-            ref = st.text_input("Referencia de la casa:")
-            pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
-            
-            msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
-            
-            if st.button("📝 CONFIRMAR PEDIDO", use_container_width=True):
-                if nombre and direccion:
-                  # --- AQUÍ OCURRE LA MAGIA DE GUARDAR EN EXCEL ---
-                    url_google = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec" 
-                    datos_excel = {
-                        "cliente": nombre,
-                        "direccion": f"{direccion} ({ref})",
-                        "pedido": texto_para_excel,
-                        "total": total_venta,
-                        "pago": pago
-                    }
-                    try:
-                        respuesta = requests.post(url_google, json=datos_excel)
-                        
-                        # Ahora Python leerá la respuesta real de Google
-                        if "Error" in respuesta.text:
-                            st.error(f"Google rechazó el dato: {respuesta.text}")
-                        else:
-                            st.toast("✅ ¡Guardado en el Excel!")
-                            
-                        # Pasamos a la fase del WhatsApp
-                        st.session_state.mensaje_whatsapp = msg_final
-                        st.session_state.pedido_guardado = True
-                        st.rerun()
-                        
-                    except Exception as e:
-                        st.error(f"Falló la conexión: {e}")
-                    
-                    # Guardamos el mensaje de whatsapp en memoria y pasamos a la fase 2
-                    st.session_state.mensaje_whatsapp = msg_final
-                    st.session_state.pedido_guardado = True
-                    st.rerun()
-                else:
-                    st.warning("Falta tu nombre o dirección.")
-            
-            if st.button("🗑️ Vaciar Carrito"):
-                st.session_state.carrito = {}
-                st.rerun()
+        st.markdown("#### 📍 Datos de Envío")
+        nombre = st.text_input("Nombre:")
+        direccion = st.text_area("Dirección exacta:")
+        ref = st.text_input("Referencia de la casa:")
+        pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
         
-        # FASE 2: EL PEDIDO YA ESTÁ EN LA BASE DE DATOS, AHORA MANDAMOS EL WHATSAPP
-        else:
-            st.success("✅ ¡Tu pedido ya fue registrado en nuestro sistema!")
-            st.markdown("Solo falta un paso: **Envíanos el WhatsApp para preparar tus tacos.**")
-            
-            msg_encoded = urllib.parse.quote(st.session_state.mensaje_whatsapp)
-            whatsapp_url = f"https://wa.me/529681171392?text={msg_encoded}"
-            
-            st.link_button("📲 ENVIAR POR WHATSAPP AHORA", whatsapp_url, type="primary", use_container_width=True)
-            
-            if st.button("⬅️ Volver a empezar y Vaciar Carrito", use_container_width=True):
-                st.session_state.pedido_guardado = False
+        msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
+        
+        # --- EL BOTÓN MÁGICO QUE HACE TODO ---
+        if st.button("📲 CONFIRMAR Y ENVIAR WHATSAPP", type="primary", use_container_width=True):
+            if nombre and direccion:
+                # 1. Guardar en Excel
+                url_google = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec" # <--- ¡PEGA TU URL AQUÍ!
+                datos_excel = {
+                    "cliente": nombre,
+                    "direccion": f"{direccion} ({ref})",
+                    "pedido": texto_para_excel,
+                    "total": total_venta,
+                    "pago": pago
+                }
+                try:
+                    requests.post(url_google, json=datos_excel)
+                except:
+                    pass # Si hay error oculto, no asustamos al cliente
+                
+                # 2. Codificamos el mensaje para WhatsApp
+                msg_encoded = urllib.parse.quote(msg_final)
+                whatsapp_url = f"https://wa.me/529681171392?text={msg_encoded}"
+                
+                # 3. TRUCO DE JAVASCRIPT: Redirige automáticamente a WhatsApp en la misma pestaña
+                js_redirect = f"<script>window.parent.location.href = '{whatsapp_url}';</script>"
+                st.components.v1.html(js_redirect, height=0)
+                
+                # 4. Limpiamos el carrito para dejar la página lista
                 st.session_state.carrito = {}
-                st.rerun()
+                
+            else:
+                st.warning("Completa tu nombre y dirección para enviar.")
+        
+        if st.button("🗑️ Vaciar Carrito"):
+            st.session_state.carrito = {}
+            st.rerun()
 
 # --- 6. INTERFAZ PRINCIPAL ---
 logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo-esquina">' if logo_base64 else ''
@@ -335,6 +310,7 @@ with tabs[2]:
         st.image("imagenes/local.png", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
     except:
         st.info("Guarda una foto llamada 'local.jpg' en la carpeta 'imagenes' para que aparezca aquí.")
+
 
 
 

@@ -198,7 +198,7 @@ def mostrar_carrito_modal():
             if st.button("📝 CONFIRMAR PEDIDO", use_container_width=True):
                 if nombre and direccion:
                   # --- AQUÍ OCURRE LA MAGIA DE GUARDAR EN EXCEL ---
-                    url_google = "https://script.google.com/macros/s/AKfycbz8dGjTb9Tbpv5tVyoOmXXDR3S6pRgYFEBVQJIBpfyI-8iVzPJnIAuQ8xi07JPXy60X/exec" # <--- ¡PEGA TU URL AQUÍ CON COMILLAS!
+                    url_google = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec" 
                     datos_excel = {
                         "cliente": nombre,
                         "direccion": f"{direccion} ({ref})",
@@ -207,18 +207,21 @@ def mostrar_carrito_modal():
                         "pago": pago
                     }
                     try:
-                        # Mandamos la información a Google
                         respuesta = requests.post(url_google, json=datos_excel)
                         
-                        # ESTO NOS AVISARÁ SI GOOGLE LO RECHAZÓ
-                        if respuesta.status_code == 200:
-                            st.toast("✅ Guardado en base de datos")
+                        # Ahora Python leerá la respuesta real de Google
+                        if "Error" in respuesta.text:
+                            st.error(f"Google rechazó el dato: {respuesta.text}")
                         else:
-                            st.error(f"Error de Google: {respuesta.text}")
+                            st.toast("✅ ¡Guardado en el Excel!")
                             
+                        # Pasamos a la fase del WhatsApp
+                        st.session_state.mensaje_whatsapp = msg_final
+                        st.session_state.pedido_guardado = True
+                        st.rerun()
+                        
                     except Exception as e:
-                        # ESTO NOS AVISARÁ SI PYTHON FALLÓ
-                        st.error(f"Error de código: {e}")
+                        st.error(f"Falló la conexión: {e}")
                     
                     # Guardamos el mensaje de whatsapp en memoria y pasamos a la fase 2
                     st.session_state.mensaje_whatsapp = msg_final
@@ -332,6 +335,7 @@ with tabs[2]:
         st.image("imagenes/local.png", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
     except:
         st.info("Guarda una foto llamada 'local.jpg' en la carpeta 'imagenes' para que aparezca aquí.")
+
 
 
 

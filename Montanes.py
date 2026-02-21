@@ -163,8 +163,6 @@ menu_completo = {**menu_tacos, **menu_bebidas}
 @st.dialog("🛒 TU PEDIDO")
 def mostrar_carrito_modal():
     
-    # Este 'vista' es nuestra pizarra mágica. 
-    # Todo lo que dibujemos aquí lo podemos borrar de golpe.
     vista = st.empty()
     
     with vista.container():
@@ -210,7 +208,7 @@ def mostrar_carrito_modal():
                 
             if vaciar:
                 st.session_state.carrito = {}
-                st.rerun() # Reinicia y cierra la pestaña
+                st.rerun()
                 
             # Si le dan a confirmar...
             if confirmar:
@@ -229,9 +227,10 @@ def mostrar_carrito_modal():
                     except:
                         pass
                         
-                    # 2. Generar link de WhatsApp
-                    msg_encoded = urllib.parse.quote(msg_final)
-                    st.session_state.whatsapp_url = f"https://wa.me/529681171392?text={msg_encoded}"
+                    # 2. Generar link de WhatsApp con codificación UTF-8 robusta para evitar rombos ()
+                    # Forzamos la codificación a utf-8 antes de armar la URL y usamos la API oficial.
+                    msg_encoded = urllib.parse.quote(msg_final.encode('utf-8'))
+                    st.session_state.whatsapp_url = f"https://api.whatsapp.com/send?phone=529681171392&text={msg_encoded}"
                     st.session_state.fase_pedido = 2
                     
                     # 3. MAGIA: Borramos el formulario entero y dibujamos el botón de WA al instante
@@ -351,6 +350,7 @@ with tabs[2]:
         st.image("imagenes/local.png", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
     except:
         st.info("Guarda una foto llamada 'local.png' en la carpeta 'imagenes' para que aparezca aquí.")
+
 
 
 

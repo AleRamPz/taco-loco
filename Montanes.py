@@ -2,6 +2,7 @@ import streamlit as st
 import urllib.parse
 import pandas as pd
 import base64 
+import requests  # <--- NUEVA LIBRERÍA PARA HABLAR CON GOOGLE
 
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
@@ -16,13 +17,13 @@ def agregar_al_carrito(producto, tipo):
     else:
         st.session_state.carrito[producto] = 1
     
-    # Notificación personalizada
     icono = "🔥" if tipo == "taco" else "🧊"
     st.toast(f"¡{producto} agregado!", icon=icono)
 
 def obtener_total_items():
     return sum(st.session_state.carrito.values())
 
+@st.cache_data
 def get_img_as_base64(file):
     try:
         with open(file, "rb") as f:
@@ -39,90 +40,61 @@ st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
-    /* --- VARIABLES --- */
     :root {
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
         --color-crema: #FFF8E1;
+        --color-texto: #212121;
     }
 
-    /* --- LIMPIEZA DE INTERFAZ (Modo Kiosco) --- */
     header { visibility: hidden !important; }
     .stAppDeployButton, [data-testid="stToolbar"], [data-testid="stDecoration"], footer { display: none !important; }
     
-    /* --- FONDO Y TEXTOS --- */
-    .stApp { 
-        background-color: var(--color-crema); 
+    [data-testid="stAppViewContainer"], .stApp { 
+        background-color: var(--color-crema) !important; 
         font-family: 'Poppins', sans-serif;
-        margin-top: -50px;
     }
+    .stApp { margin-top: -50px; }
     
-    /* Títulos generales en oscuro */
-    h1, h2, h3, h4, p, div, span, label, li { color: #212121; }
+    h1, h2, h3, h4, p, div, span, label, li { color: var(--color-texto) !important; }
 
-    /* --- ESTILO DEL MODAL (VENTANA EMERGENTE) --- */
-    /* Fondo Naranja Degradado */
+    /* ESTILO MODAL */
     div[role="dialog"] {
         background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo)) !important;
-        color: white !important;
         border: 2px solid white;
     }
-    
-    /* Textos dentro del modal (Blanco) */
     div[role="dialog"] h1, div[role="dialog"] h2, div[role="dialog"] h3, 
-    div[role="dialog"] p, div[role="dialog"] span, div[role="dialog"] div, 
-    div[role="dialog"] label {
+    div[role="dialog"] p, div[role="dialog"] span, div[role="dialog"] label {
         color: white !important;
     }
     
-    /* --- INPUTS Y SELECTBOX DENTRO DEL MODAL (TRANSPARENTES + LETRA BLANCA) --- */
-    
-    /* Campos de Texto (Nombre, Dirección) */
+    /* INPUTS */
     div[role="dialog"] input, div[role="dialog"] textarea {
-        background-color: rgba(255, 255, 255, 0.2) !important; /* Transparente */
-        color: white !important; /* Letra blanca */
-        border: 1px solid white !important;
+        background-color: white !important;
+        color: #212121 !important;
+        border: 2px solid var(--color-naranja) !important;
         border-radius: 10px;
     }
-    div[role="dialog"] input::placeholder, div[role="dialog"] textarea::placeholder {
-        color: rgba(255, 255, 255, 0.7) !important;
-    }
+    div[role="dialog"] input::placeholder, div[role="dialog"] textarea::placeholder { color: #757575 !important; }
 
-    /* Selector de Pago (Cajita) */
     div[role="dialog"] div[data-baseweb="select"] > div {
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        color: white !important;
-        border: 1px solid white !important;
-    }
-    /* Texto dentro del selector */
-    div[role="dialog"] div[data-baseweb="select"] span {
-        color: white !important;
-    }
-    /* Icono de flechita del selector */
-    div[role="dialog"] div[data-baseweb="select"] svg {
-        fill: white !important;
-    }
-    
-    /* El menú desplegable (las opciones al abrir) tiene que ser blanco con letras negras para leerse bien */
-    div[data-baseweb="popover"] div {
         background-color: white !important;
-        color: #FF6B00 !important;
-        font-weight: bold;
+        color: #212121 !important;
+        border: 2px solid var(--color-naranja) !important;
     }
+    div[role="dialog"] div[data-baseweb="select"] span { color: #212121 !important; font-weight: bold; }
+    div[role="dialog"] div[data-baseweb="select"] svg { fill: var(--color-naranja) !important; }
+    div[data-baseweb="popover"] div { background-color: white !important; color: #FF6B00 !important; font-weight: bold; }
 
-    /* --- NOTIFICACIONES (TOAST) --- */
+    /* TOASTS */
     div[data-baseweb="toast"] {
         background-color: var(--color-naranja) !important;
-        color: white !important;
-        font-weight: bold;
         border: 2px solid white;
         border-radius: 10px;
     }
-    div[data-baseweb="toast"] div {
-        color: white !important; 
-    }
+    div[data-baseweb="toast"] div { color: white !important; font-weight: bold; }
 
-    /* --- HEADER --- */
+    /* HEADER */
     .header-container {
         background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo));
         padding: 2rem;
@@ -140,7 +112,7 @@ st.markdown("""
     .header-frase-peque { color: white !important; font-weight: 700; font-size: 1.2rem; margin: 0; }
     .header-frase-grande { color: white !important; font-weight: 900; font-size: 3rem; line-height: 1.1; margin: 0; }
 
-    /* --- BOTONES --- */
+    /* BOTONES */
     .stButton>button {
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important;
         color: white !important;
@@ -150,23 +122,22 @@ st.markdown("""
         transition: transform 0.1s;
     }
     .stButton>button:active { transform: scale(0.95); }
-    
-    /* Botón del Carrito (Primario) */
     div[data-testid="column"] button[kind="primary"] {
-        background: white !important;
-        color: var(--color-rojo) !important;
-        border: 2px solid var(--color-rojo) !important;
+        background: white !important; color: var(--color-rojo) !important; border: 2px solid var(--color-rojo) !important;
     }
 
-    /* --- TABS --- */
+    /* TABS Y PRODUCTOS */
     .stTabs [data-baseweb="tab-list"] { background-color: white; padding: 5px; border-radius: 15px; }
-    .stTabs [data-baseweb="tab"] { color: var(--color-naranja); font-weight: bold; }
-    .stTabs [aria-selected="true"] { background-color: var(--color-naranja); color: white !important; border-radius: 10px; }
-
-    /* --- PRODUCTOS --- */
+    .stTabs [data-baseweb="tab"] { color: var(--color-naranja) !important; font-weight: bold; }
+    .stTabs [aria-selected="true"] { background-color: var(--color-naranja) !important; color: white !important; border-radius: 10px; }
     [data-testid="column"] { background: white; padding: 15px; border-radius: 15px; border-bottom: 4px solid var(--color-naranja); margin-bottom: 10px; }
     .precio-tag { color: var(--color-verde) !important; font-weight: 900; font-size: 1.5rem; }
     .nombre-prod { font-size: 1.2rem; font-weight: 800; color: #212121 !important; }
+    .ubicacion-box {
+        background-color: white; padding: 20px; border-radius: 15px; 
+        border-left: 5px solid var(--color-naranja); margin-top: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -180,18 +151,25 @@ menu_tacos = {
 menu_bebidas = {
     "Agua de Horchata": {"precio": 20, "img": "imagenes/horchata.png", "desc": "Arroz y canela."},
     "Agua de Jamaica": {"precio": 20, "img": "imagenes/jamaica.png", "desc": "Natural y fresca."},
-    "Senzao": {"precio": 25, "img": "imagenes/senzao.png", "desc": "Tradicional de Coita."}
+    "Zensao": {"precio": 25, "img": "imagenes/senzao.png", "desc": "Tradicional de Coita."}
 }
 menu_completo = {**menu_tacos, **menu_bebidas}
 
-# --- 5. VENTANA EMERGENTE (MODAL) ---
+# --- 5. VENTANA EMERGENTE (MODAL CON BASE DE DATOS) ---
 @st.dialog("🛒 TU PEDIDO")
 def mostrar_carrito_modal():
+    
+    # Manejamos el estado del formulario para que no se borre al guardar
+    if 'pedido_guardado' not in st.session_state:
+        st.session_state.pedido_guardado = False
+
     if not st.session_state.carrito:
         st.info("Tu carrito está vacío.")
     else:
         total_venta = 0
         texto_pedido = ""
+        texto_para_excel = "" # Guardamos el pedido resumido para tu base de datos
+        
         for item, cant in st.session_state.carrito.items():
             precio_u = menu_completo[item]["precio"]
             subtotal = cant * precio_u
@@ -202,32 +180,65 @@ def mostrar_carrito_modal():
             c2.markdown(f"x{cant}")
             c3.markdown(f"${subtotal}")
             texto_pedido += f"• {cant}x {item} (${subtotal})\n"
+            texto_para_excel += f"{cant}x {item}, "
         
         st.divider()
         st.markdown(f"<h3 style='text-align: right; color: white !important;'>Total: ${total_venta}</h3>", unsafe_allow_html=True)
         
-        st.markdown("#### 📍 Datos de Envío")
-        nombre = st.text_input("Nombre:")
-        direccion = st.text_area("Dirección:")
-        ref = st.text_input("Referencia:")
+        # Si el pedido aún no se ha guardado en la base de datos, mostramos el formulario
+        if not st.session_state.pedido_guardado:
+            st.markdown("#### 📍 Datos de Envío")
+            nombre = st.text_input("Nombre:")
+            direccion = st.text_area("Dirección exacta:")
+            ref = st.text_input("Referencia de la casa:")
+            pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
+            
+            msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
+            
+            if st.button("📝 CONFIRMAR PEDIDO", use_container_width=True):
+                if nombre and direccion:
+                    # --- AQUÍ OCURRE LA MAGIA DE GUARDAR EN EXCEL ---
+                    url_google = "https://script.google.com/macros/s/AKfycbz8dGjTb9Tbpv5tVyoOmXXDR3S6pRgYFEBVQJIBpfyI-8iVzPJnIAuQ8xi07JPXy60X/exec" # <--- ¡PEGAR TU URL AQUÍ!
+                    datos_excel = {
+                        "cliente": nombre,
+                        "direccion": f"{direccion} ({ref})",
+                        "pedido": texto_para_excel,
+                        "total": total_venta,
+                        "pago": pago
+                    }
+                    try:
+                        # Mandamos la información a Google
+                        requests.post(url_google, json=datos_excel)
+                    except:
+                        pass # Si hay error de internet, no bloquea al usuario
+                    
+                    # Guardamos el mensaje de whatsapp en memoria y pasamos a la fase 2
+                    st.session_state.mensaje_whatsapp = msg_final
+                    st.session_state.pedido_guardado = True
+                    st.rerun()
+                else:
+                    st.warning("Falta tu nombre o dirección.")
+            
+            if st.button("🗑️ Vaciar Carrito"):
+                st.session_state.carrito = {}
+                st.rerun()
         
-        # AQUÍ ESTÁN LOS EMOJIS EN EL PAGO
-        pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
-        
-        msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
-        
-        if nombre and direccion:
-            msg_encoded = urllib.parse.quote(msg_final)
+        # FASE 2: EL PEDIDO YA ESTÁ EN LA BASE DE DATOS, AHORA MANDAMOS EL WHATSAPP
+        else:
+            st.success("✅ ¡Tu pedido ya fue registrado en nuestro sistema!")
+            st.markdown("Solo falta un paso: **Envíanos el WhatsApp para preparar tus tacos.**")
+            
+            msg_encoded = urllib.parse.quote(st.session_state.mensaje_whatsapp)
             whatsapp_url = f"https://wa.me/529681171392?text={msg_encoded}"
-            st.link_button("📲 ENVIAR PEDIDO", whatsapp_url, type="primary", use_container_width=True)
-        
-        if st.button("🗑️ Vaciar Carrito"):
-            st.session_state.carrito = {}
-            st.rerun()
+            
+            st.link_button("📲 ENVIAR POR WHATSAPP AHORA", whatsapp_url, type="primary", use_container_width=True)
+            
+            if st.button("⬅️ Volver a empezar y Vaciar Carrito", use_container_width=True):
+                st.session_state.pedido_guardado = False
+                st.session_state.carrito = {}
+                st.rerun()
 
 # --- 6. INTERFAZ PRINCIPAL ---
-
-# Header
 logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo-esquina">' if logo_base64 else ''
 st.markdown(f"""
     <div class="header-container">
@@ -237,29 +248,25 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# --- BARRA DE NAVEGACIÓN (TITULO IZQ - CARRITO DER) ---
 col_titulo, col_carrito = st.columns([7, 2])
-
 with col_titulo:
     st.subheader("🔥 Menú del Día")
 
 with col_carrito:
-    # Lógica del botón del carrito
     total_items = obtener_total_items()
     label_btn = "🛒 Ver Carrito"
-    tipo_btn = "secondary" # Gris/Blanco por defecto
+    tipo_btn = "secondary"
     
     if total_items > 0:
         label_btn = f"🛒 Ver Carrito ({total_items})"
-        tipo_btn = "primary" # Se pone rojo/naranja cuando hay cosas
+        tipo_btn = "primary"
         
     if st.button(label_btn, type=tipo_btn, use_container_width=True):
         mostrar_carrito_modal()
 
-# Tabs
 tabs = st.tabs(["🌮 TACOS", "🥤 BEBIDAS", "📍 UBICACIÓN"])
 
-# PESTAÑA 1: TACOS
+# TACOS
 with tabs[0]:
     cols = st.columns(2)
     for i, (nombre, info) in enumerate(menu_tacos.items()):
@@ -271,10 +278,11 @@ with tabs[0]:
             st.markdown(f"<div class='desc-prod'>{info['desc']}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
             
-            # --- BOTÓN CON "+" Y CARRITO ---
-            st.button("AGREGAR + 🛒", key=f"t_{i}", on_click=agregar_al_carrito, args=(nombre, "taco"))
+            cantidad_actual = st.session_state.carrito.get(nombre, 0)
+            texto_boton = f"AGREGAR ({cantidad_actual}) 🛒" if cantidad_actual > 0 else "AGREGAR + 🛒"
+            st.button(texto_boton, key=f"t_{i}", on_click=agregar_al_carrito, args=(nombre, "taco"))
 
-# PESTAÑA 2: BEBIDAS
+# BEBIDAS
 with tabs[1]:
     cols_b = st.columns(3)
     for i, (nombre, info) in enumerate(menu_bebidas.items()):
@@ -285,11 +293,35 @@ with tabs[1]:
             st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
             st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
             
-            # --- BOTÓN CON "+" Y CARRITO ---
-            st.button("AGREGAR + 🛒", key=f"b_{i}", on_click=agregar_al_carrito, args=(nombre, "bebida"))
+            cantidad_actual = st.session_state.carrito.get(nombre, 0)
+            texto_boton = f"AGREGAR ({cantidad_actual}) 🛒" if cantidad_actual > 0 else "AGREGAR + 🛒"
+            st.button(texto_boton, key=f"b_{i}", on_click=agregar_al_carrito, args=(nombre, "bebida"))
 
-# PESTAÑA 3: UBICACIÓN
+# UBICACIÓN
 with tabs[2]:
-    st.info("🕒 Horario: 6:00 PM - 12:00 AM")
-    lat, lon = 16.753554732500405, -93.37373160552643
-    st.map(pd.DataFrame({'lat': [lat], 'lon': [lon]}), zoom=15)
+    st.markdown("### 🗺️ Encuéntranos")
+    mapa_html = """
+    <iframe 
+        src="https://www.google.com/maps?q=16.753554732500405,-93.37373160552643&hl=es&z=16&output=embed" 
+        width="100%" height="350" 
+        style="border:0; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" 
+        allowfullscreen="" loading="lazy">
+    </iframe>
+    """
+    st.markdown(mapa_html, unsafe_allow_html=True)
+    
+    st.markdown("""
+        <div class='ubicacion-box'>
+            <h4 style='color: #FF6B00 !important; margin-top: 0;'>📍 Dirección</h4>
+            <p><strong>El Taco Loco</strong><br>Ocozocoautla de Espinosa, Chiapas.</p>
+            <h4 style='color: #FF6B00 !important; margin-top: 15px;'>🕒 Horario</h4>
+            <p>Lunes a Domingo: <strong>6:00 PM - 12:00 AM</strong></p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("#### 📸 Conoce nuestro local:")
+    try:
+        st.image("imagenes/local.jpg", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
+    except:
+        st.info("Guarda una foto llamada 'local.jpg' en la carpeta 'imagenes' para que aparezca aquí.")
+

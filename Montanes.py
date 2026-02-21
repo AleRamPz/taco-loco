@@ -151,7 +151,7 @@ menu_tacos = {
 menu_bebidas = {
     "Agua de Horchata": {"precio": 20, "img": "imagenes/horchata.png", "desc": "Arroz y canela."},
     "Agua de Jamaica": {"precio": 20, "img": "imagenes/jamaica.png", "desc": "Natural y fresca."},
-    "Zensao": {"precio": 25, "img": "imagenes/senzao.png", "desc": "Tradicional de Coita."}
+    "Senzao": {"precio": 25, "img": "imagenes/senzao.png", "desc": "Tradicional de Coita."}
 }
 menu_completo = {**menu_tacos, **menu_bebidas}
 
@@ -321,8 +321,9 @@ with tabs[2]:
     
     st.markdown("#### 📸 Conoce nuestro local:")
     try:
-        st.image("imagenes/local.jpg", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
+        st.image("imagenes/local.png", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
     except:
         st.info("Guarda una foto llamada 'local.jpg' en la carpeta 'imagenes' para que aparezca aquí.")
+
 
 

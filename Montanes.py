@@ -325,3 +325,4 @@ with tabs[2]:
     except:
         st.info("Guarda una foto llamada 'local.jpg' en la carpeta 'imagenes' para que aparezca aquí.")
 
+

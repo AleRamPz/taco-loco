@@ -2,7 +2,7 @@ import streamlit as st
 import urllib.parse
 import pandas as pd
 import base64 
-import requests  # Librería para conectarnos a Google Sheets
+import requests 
 
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
@@ -10,6 +10,10 @@ st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
 # --- 2. LÓGICA DEL CARRITO ---
 if 'carrito' not in st.session_state:
     st.session_state.carrito = {}
+
+# Variable para controlar las fases de la ventana de pago
+if 'fase_pedido' not in st.session_state:
+    st.session_state.fase_pedido = 1
 
 def agregar_al_carrito(producto, tipo):
     if producto in st.session_state.carrito:
@@ -138,6 +142,16 @@ st.markdown("""
         border-left: 5px solid var(--color-naranja); margin-top: 20px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
+    
+    /* CAJA DE ÉXITO EN EL MODAL */
+    .success-box {
+        background-color: rgba(255,255,255,0.2);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid white;
+        text-align: center;
+        margin-bottom: 15px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -155,74 +169,91 @@ menu_bebidas = {
 }
 menu_completo = {**menu_tacos, **menu_bebidas}
 
-# --- 5. VENTANA EMERGENTE (MODAL CON 1 SOLO CLIC) ---
+# --- 5. VENTANA EMERGENTE (MODAL SEGURO EN 2 FASES) ---
 @st.dialog("🛒 TU PEDIDO")
 def mostrar_carrito_modal():
-
+    
     if not st.session_state.carrito:
         st.info("Tu carrito está vacío.")
-    else:
-        total_venta = 0
-        texto_pedido = ""
-        texto_para_excel = ""
+        st.session_state.fase_pedido = 1
+        return
+
+    # FASE 2: YA SE GUARDÓ EN EXCEL, AHORA ABRIMOS WHATSAPP
+    if st.session_state.fase_pedido == 2:
+        st.markdown("""
+            <div class='success-box'>
+                <h3>✅ ¡Pedido Registrado!</h3>
+                <p>Ya lo anotamos. Ahora haz clic en el botón de abajo para mandarlo por WhatsApp.</p>
+            </div>
+        """, unsafe_allow_html=True)
         
-        for item, cant in st.session_state.carrito.items():
-            precio_u = menu_completo[item]["precio"]
-            subtotal = cant * precio_u
-            total_venta += subtotal
-            
-            c1, c2, c3 = st.columns([3, 1, 1])
-            c1.markdown(f"**{item}**")
-            c2.markdown(f"x{cant}")
-            c3.markdown(f"${subtotal}")
-            texto_pedido += f"• {cant}x {item} (${subtotal})\n"
-            texto_para_excel += f"{cant}x {item}, "
+        # Este botón es NATIVO de Streamlit, garantiza que abra WhatsApp siempre
+        st.link_button("📲 2. ABRIR WHATSAPP AHORA", st.session_state.whatsapp_url, type="primary", use_container_width=True)
         
         st.divider()
-        st.markdown(f"<h3 style='text-align: right; color: white !important;'>Total: ${total_venta}</h3>", unsafe_allow_html=True)
-        
-        st.markdown("#### 📍 Datos de Envío")
-        nombre = st.text_input("Nombre:")
-        direccion = st.text_area("Dirección exacta:")
-        ref = st.text_input("Referencia de la casa:")
-        pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
-        
-        msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
-        
-        # --- EL BOTÓN MÁGICO QUE HACE TODO ---
-        if st.button("📲 CONFIRMAR Y ENVIAR WHATSAPP", type="primary", use_container_width=True):
-            if nombre and direccion:
-                # 1. Guardar en Excel
-                url_google = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec" # <--- ¡PEGA TU URL AQUÍ!
-                datos_excel = {
-                    "cliente": nombre,
-                    "direccion": f"{direccion} ({ref})",
-                    "pedido": texto_para_excel,
-                    "total": total_venta,
-                    "pago": pago
-                }
-                try:
-                    requests.post(url_google, json=datos_excel)
-                except:
-                    pass # Si hay error oculto, no asustamos al cliente
-                
-                # 2. Codificamos el mensaje para WhatsApp
-                msg_encoded = urllib.parse.quote(msg_final)
-                whatsapp_url = f"https://wa.me/529681171392?text={msg_encoded}"
-                
-                # 3. TRUCO DE JAVASCRIPT: Redirige automáticamente a WhatsApp en la misma pestaña
-                js_redirect = f"<script>window.parent.location.href = '{whatsapp_url}';</script>"
-                st.components.v1.html(js_redirect, height=0)
-                
-                # 4. Limpiamos el carrito para dejar la página lista
-                st.session_state.carrito = {}
-                
-            else:
-                st.warning("Completa tu nombre y dirección para enviar.")
-        
-        if st.button("🗑️ Vaciar Carrito"):
+        if st.button("✨ Terminar y limpiar carrito", use_container_width=True):
             st.session_state.carrito = {}
+            st.session_state.fase_pedido = 1
             st.rerun()
+        return
+
+    # FASE 1: CONFIRMAR Y GUARDAR EN EXCEL
+    total_venta = 0
+    texto_pedido = ""
+    texto_para_excel = ""
+    
+    for item, cant in st.session_state.carrito.items():
+        precio_u = menu_completo[item]["precio"]
+        subtotal = cant * precio_u
+        total_venta += subtotal
+        
+        c1, c2, c3 = st.columns([3, 1, 1])
+        c1.markdown(f"**{item}**")
+        c2.markdown(f"x{cant}")
+        c3.markdown(f"${subtotal}")
+        texto_pedido += f"• {cant}x {item} (${subtotal})\n"
+        texto_para_excel += f"{cant}x {item}, "
+    
+    st.divider()
+    st.markdown(f"<h3 style='text-align: right; color: white !important;'>Total: ${total_venta}</h3>", unsafe_allow_html=True)
+    
+    st.markdown("#### 📍 Datos de Envío")
+    nombre = st.text_input("Nombre:")
+    direccion = st.text_area("Dirección exacta:")
+    ref = st.text_input("Referencia de la casa:")
+    pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
+    
+    msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
+    
+    if st.button("📝 1. CONFIRMAR PEDIDO", type="primary", use_container_width=True):
+        if nombre and direccion:
+            # 1. Guardar en Excel
+            url_google = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec" # <--- ¡PEGA TU URL AQUÍ!
+            datos_excel = {
+                "cliente": nombre,
+                "direccion": f"{direccion} ({ref})",
+                "pedido": texto_para_excel,
+                "total": total_venta,
+                "pago": pago
+            }
+            try:
+                requests.post(url_google, json=datos_excel)
+            except:
+                pass
+            
+            # 2. Generar el link de WhatsApp y guardarlo en memoria
+            msg_encoded = urllib.parse.quote(msg_final)
+            st.session_state.whatsapp_url = f"https://wa.me/529681171392?text={msg_encoded}"
+            
+            # 3. Cambiar a Fase 2 (Mostrar botón de WhatsApp sin cerrar la ventana)
+            st.session_state.fase_pedido = 2
+            st.rerun()
+        else:
+            st.warning("⚠️ Completa tu nombre y dirección por favor.")
+    
+    if st.button("🗑️ Vaciar Carrito", use_container_width=True):
+        st.session_state.carrito = {}
+        st.rerun()
 
 # --- 6. INTERFAZ PRINCIPAL ---
 logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo-esquina">' if logo_base64 else ''
@@ -248,6 +279,8 @@ with col_carrito:
         tipo_btn = "primary"
         
     if st.button(label_btn, type=tipo_btn, use_container_width=True):
+        # Asegurarnos que siempre abra en la fase de formulario
+        st.session_state.fase_pedido = 1 
         mostrar_carrito_modal()
 
 tabs = st.tabs(["🌮 TACOS", "🥤 BEBIDAS", "📍 UBICACIÓN"])
@@ -310,6 +343,7 @@ with tabs[2]:
         st.image("imagenes/local.png", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
     except:
         st.info("Guarda una foto llamada 'local.jpg' en la carpeta 'imagenes' para que aparezca aquí.")
+
 
 
 

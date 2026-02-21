@@ -11,6 +11,7 @@ st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
 if 'carrito' not in st.session_state:
     st.session_state.carrito = {}
 
+# Control de fases (1 = Formulario, 2 = Listo para WhatsApp)
 if 'fase_pedido' not in st.session_state:
     st.session_state.fase_pedido = 1
 
@@ -71,7 +72,7 @@ st.markdown("""
         color: white !important;
     }
     
-    /* INPUTS A PRUEBA DE FALLOS */
+    /* INPUTS */
     div[role="dialog"] input, div[role="dialog"] textarea {
         background-color: white !important;
         color: #212121 !important;
@@ -158,16 +159,17 @@ menu_bebidas = {
 }
 menu_completo = {**menu_tacos, **menu_bebidas}
 
-# --- 5. VENTANA EMERGENTE SIN CORTES ---
+# --- 5. VENTANA EMERGENTE (MODAL PERFECTO) ---
 @st.dialog("🛒 TU PEDIDO")
 def mostrar_carrito_modal():
     
-    # Creamos un contenedor que podemos actualizar sin cerrar la ventana
-    contenedor_modal = st.empty()
+    # Este 'vista' es nuestra pizarra mágica. 
+    # Todo lo que dibujemos aquí lo podemos borrar de golpe.
+    vista = st.empty()
     
-    with contenedor_modal.container():
+    with vista.container():
         
-        # FASE 1: Mostrar carrito y pedir datos
+        # --- FASE 1: FORMULARIO Y CARRITO ---
         if st.session_state.fase_pedido == 1:
             if not st.session_state.carrito:
                 st.info("Tu carrito está vacío.")
@@ -200,19 +202,20 @@ def mostrar_carrito_modal():
             
             msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
             
-            col1, col2 = st.columns(2)
-            with col1:
+            col_conf, col_vac = st.columns(2)
+            with col_conf:
                 confirmar = st.button("📝 CONFIRMAR PEDIDO", type="primary", use_container_width=True)
-            with col2:
+            with col_vac:
                 vaciar = st.button("🗑️ Vaciar Carrito", use_container_width=True)
                 
             if vaciar:
                 st.session_state.carrito = {}
-                st.rerun() # Aquí sí queremos que se cierre porque se vació
+                st.rerun() # Reinicia y cierra la pestaña
                 
+            # Si le dan a confirmar...
             if confirmar:
                 if nombre and direccion:
-                    # Guardamos en Excel silenciosamente
+                    # 1. Guardar en Excel en silencio
                     url_google = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec" # <--- ¡PON TU LINK AQUÍ!
                     datos_excel = {
                         "cliente": nombre,
@@ -226,40 +229,40 @@ def mostrar_carrito_modal():
                     except:
                         pass
                         
-                    # Preparamos WhatsApp
+                    # 2. Generar link de WhatsApp
                     msg_encoded = urllib.parse.quote(msg_final)
                     st.session_state.whatsapp_url = f"https://wa.me/529681171392?text={msg_encoded}"
                     st.session_state.fase_pedido = 2
                     
-                    # MAGIA: Borramos el formulario y mostramos la Fase 2 instantáneamente
-                    contenedor_modal.empty()
-                    with contenedor_modal.container():
+                    # 3. MAGIA: Borramos el formulario entero y dibujamos el botón de WA al instante
+                    vista.empty()
+                    with vista.container():
                         st.markdown("""
                             <div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; border: 2px solid white; text-align: center; margin-bottom: 20px;'>
                                 <h2>✅ ¡Casi listo!</h2>
-                                <p style="font-size: 1.1rem;">Tu pedido fue registrado. Toca el botón para mandarnos el mensaje y prepararlo.</p>
+                                <p style="font-size: 1.1rem;">Tu pedido ya está anotado. Toca el botón para enviarnos el mensaje y prepararlo rápido.</p>
                             </div>
                         """, unsafe_allow_html=True)
                         st.link_button("📲 ABRIR WHATSAPP AHORA", st.session_state.whatsapp_url, type="primary", use_container_width=True)
                         
-                        if st.button("✨ Terminar y limpiar carrito", key="btn_terminar_magico", use_container_width=True):
+                        if st.button("✨ Terminar y limpiar carrito", use_container_width=True):
                             st.session_state.carrito = {}
                             st.session_state.fase_pedido = 1
                             st.rerun()
                 else:
                     st.warning("⚠️ Completa tu nombre y dirección por favor.")
 
-        # FASE 2: Por si interactúan y la ventana se repinta
+        # --- FASE 2: (Por si ya confirmaron y la ventana se vuelve a dibujar) ---
         elif st.session_state.fase_pedido == 2:
             st.markdown("""
                 <div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; border: 2px solid white; text-align: center; margin-bottom: 20px;'>
                     <h2>✅ ¡Casi listo!</h2>
-                    <p style="font-size: 1.1rem;">Tu pedido fue registrado. Toca el botón para mandarnos el mensaje y prepararlo.</p>
+                    <p style="font-size: 1.1rem;">Tu pedido ya está anotado. Toca el botón para enviarnos el mensaje y prepararlo rápido.</p>
                 </div>
             """, unsafe_allow_html=True)
             st.link_button("📲 ABRIR WHATSAPP AHORA", st.session_state.whatsapp_url, type="primary", use_container_width=True)
             
-            if st.button("✨ Terminar y limpiar carrito", key="btn_terminar_normal", use_container_width=True):
+            if st.button("✨ Terminar y limpiar carrito", use_container_width=True):
                 st.session_state.carrito = {}
                 st.session_state.fase_pedido = 1
                 st.rerun()
@@ -288,7 +291,7 @@ with col_carrito:
         tipo_btn = "primary"
         
     if st.button(label_btn, type=tipo_btn, use_container_width=True):
-        st.session_state.fase_pedido = 1 # Siempre abrir en fase 1
+        st.session_state.fase_pedido = 1 # Garantiza que si lo abres, empiece en Fase 1
         mostrar_carrito_modal()
 
 tabs = st.tabs(["🌮 TACOS", "🥤 BEBIDAS", "📍 UBICACIÓN"])
@@ -348,6 +351,7 @@ with tabs[2]:
         st.image("imagenes/local.png", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
     except:
         st.info("Guarda una foto llamada 'local.png' en la carpeta 'imagenes' para que aparezca aquí.")
+
 
 
 

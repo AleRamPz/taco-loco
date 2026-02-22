@@ -52,7 +52,7 @@ def get_img_as_base64(file):
 img_path = "imagenes/logo.png" 
 logo_base64 = get_img_as_base64(img_path)
 
-bg_path = "imagenes/fondo_tacos.png" 
+bg_path = "imagenes/fondotacos.png" 
 bg_base64 = get_img_as_base64(bg_path)
 
 # --- 3. ESTILOS CSS ---
@@ -509,6 +509,7 @@ st.markdown("""
         <p class="texto-creditos">Desarrollado por AleRamPz para El Taco Loco © 2026</p>
     </div>
 """, unsafe_allow_html=True)
+
 
 
 

@@ -64,7 +64,7 @@ st.markdown("""
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
         --color-crema: #F4F6F8; 
-        --color-texto: #1D1D1F; /* Un gris casi negro, más elegante que el negro puro */
+        --color-texto: #1D1D1F; 
     }
 
     /* DESTRUCCIÓN TOTAL DE LA MARCA DE STREAMLIT */
@@ -86,9 +86,14 @@ st.markdown("""
     
     [data-testid="stAppViewBlockContainer"], [data-testid="stVerticalBlock"] { opacity: 1 !important; }
 
-    /* TIPOGRAFÍA PRINCIPAL INTER (Estilo Uber/Apple) */
+    /* =========================================================
+       NUEVO FONDO DE PATRÓN "DIBUJOS DE TIZA/LÁPIZ" (ESTILO FOGONCITO)
+       ========================================================= */
     [data-testid="stAppViewContainer"], .stApp { 
         background-color: var(--color-crema) !important; 
+        /* Se inyectan trazos vectoriales a mano alzada (taco, chile, limón, totopo, aguacate) con opacidad del 6% */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 200 200'%3E%3Cg stroke='%231D1D1F' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.06'%3E%3Cpath d='M20,80 C20,50 70,50 70,80 C70,85 20,85 20,80 Z'/%3E%3Cpath d='M25,75 Q45,60 65,75'/%3E%3Cpath d='M30,70 L35,60 M45,72 L47,58 M60,68 L58,58'/%3E%3Cpath d='M150,30 C170,30 180,60 160,80 C140,100 120,70 150,30 Z'/%3E%3Cpath d='M150,30 Q145,20 135,15'/%3E%3Ccircle cx='50' cy='150' r='20'/%3E%3Ccircle cx='50' cy='150' r='15'/%3E%3Cline x1='50' y1='135' x2='50' y2='165'/%3E%3Cline x1='35' y1='150' x2='65' y2='150'/%3E%3Cline x1='39' y1='139' x2='61' y2='161'/%3E%3Cline x1='39' y1='161' x2='61' y2='139'/%3E%3Cpath d='M140,150 C120,150 120,180 140,180 C160,180 160,150 140,150 Z'/%3E%3Ccircle cx='140' cy='168' r='8'/%3E%3Cpolygon points='90,100 110,60 130,100'/%3E%3Cpath d='M100,75 L102,77 M115,90 L117,92'/%3E%3Cpath d='M90,20 L95,25 M95,20 L90,25'/%3E%3Cpath d='M20,120 L25,125 M25,120 L20,125'/%3E%3Cpath d='M180,130 A5,5 0 0,1 190,130 A5,5 0 0,1 180,130'/%3E%3C/g%3E%3C/svg%3E") !important;
+        background-size: 400px 400px;
         font-family: 'Inter', sans-serif !important;
     }
     .stApp { margin-top: -50px; }
@@ -206,7 +211,8 @@ st.markdown("""
     .stTabs [aria-selected="true"] { background-color: var(--color-naranja) !important; color: white !important; box-shadow: 0 5px 15px rgba(255, 107, 0, 0.3); }
     
     [data-testid="column"] { 
-        background: white; 
+        background: rgba(255, 255, 255, 0.85); /* Transparencia para que el patrón se vea sutilmente por detrás de las tarjetas */
+        backdrop-filter: blur(5px);
         padding: 20px; 
         border-radius: 20px; 
         margin-bottom: 10px; 
@@ -217,7 +223,7 @@ st.markdown("""
     .desc-prod { font-size: 0.95rem; color: #888888 !important; margin-bottom: 15px; line-height: 1.4; font-weight: 500;}
     
     .ubicacion-box {
-        background-color: white; padding: 25px; border-radius: 20px; 
+        background-color: rgba(255, 255, 255, 0.9); padding: 25px; border-radius: 20px; 
         border-left: 5px solid var(--color-naranja); margin-top: 20px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     }
@@ -506,9 +512,10 @@ st.markdown("""
             <a href='#' target='_blank'>Instagram</a>
             <a href='#' target='_blank'>TikTok</a>
         </div>
-        <p class="texto-creditos">Desarrollado por AleRamPz para El Taco Loco © 2026</p>
+        <p class="texto-creditos">© 2026 ElTacoLoco. Todos los derechos reservados. Hecho con 🔥 por AleRampz</p>
     </div>
 """, unsafe_allow_html=True)
+
 
 
 

@@ -64,23 +64,28 @@ st.markdown("""
         --color-texto: #212121;
     }
 
-    /* OCULTAR TODO EL RASTRO DE STREAMLIT (Marca de agua, footer, botones) */
-    header { visibility: hidden !important; }
-    footer { visibility: hidden !important; display: none !important; }
-    .stAppDeployButton { display: none !important; }
-    [data-testid="stToolbar"] { display: none !important; }
-    [data-testid="stDecoration"] { display: none !important; }
-    [data-testid="stStatusWidget"] { display: none !important; }
-    #MainMenu { visibility: hidden !important; }
+    /* =======================================================
+       DESTRUCCIÓN TOTAL DE LA MARCA DE STREAMLIT (PC Y MÓVIL) 
+       ======================================================= */
+    header, footer, [data-testid="stToolbar"], [data-testid="stDecoration"], 
+    [data-testid="stStatusWidget"], #MainMenu { 
+        display: none !important; 
+        visibility: hidden !important; 
+    }
     
-    /* HACK PARA OCULTAR LA PESTAÑA FLOTANTE DE LA ESQUINA INFERIOR */
-    a[href^="https://streamlit.io/cloud"] { display: none !important; }
-    div[class^="viewerBadge"] { display: none !important; }
-    div[class^="stDeployButton"] { display: none !important; }
+    div[class*="viewerBadge"], 
+    div[class*="stDeployButton"], 
+    a[href*="streamlit"], 
+    button[kind="header"] {
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        z-index: -9999 !important;
+    }
     
-    /* EVITAR PARPADEO GRIS AL RECARGAR */
     [data-testid="stAppViewBlockContainer"], [data-testid="stVerticalBlock"] { opacity: 1 !important; }
-    
+    /* ======================================================= */
+
     [data-testid="stAppViewContainer"], .stApp { 
         background-color: var(--color-crema) !important; 
         font-family: 'Poppins', sans-serif;
@@ -135,7 +140,7 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
         position: relative;
     }
-    /* LOGO MÁS GRANDE */
+    /* LOGO MÁS GRANDE CENTRADO */
     .logo-esquina {
         display: block;
         margin: 0 auto 15px auto;
@@ -454,6 +459,7 @@ st.markdown("""
         <p class="texto-creditos">Desarrollado por AleRamPz para El Taco Loco © 2026</p>
     </div>
 """, unsafe_allow_html=True)
+
 
 
 

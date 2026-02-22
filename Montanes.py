@@ -3,15 +3,15 @@ import urllib.parse
 import pandas as pd
 import base64 
 import requests 
+import threading 
 
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
 
-# --- 2. LÓGICA DEL CARRITO ---
+# --- 2. LÓGICA DEL CARRITO Y VELOCIDAD ---
 if 'carrito' not in st.session_state:
     st.session_state.carrito = {}
 
-# Control de fases (1 = Formulario, 2 = Listo para WhatsApp)
 if 'fase_pedido' not in st.session_state:
     st.session_state.fase_pedido = 1
 
@@ -22,10 +22,23 @@ def agregar_al_carrito(producto, tipo):
         st.session_state.carrito[producto] = 1
     
     icono = "🔥" if tipo == "taco" else "🧊"
-    st.toast(f"¡{producto} agregado!", icon=icono)
+    st.toast(f"¡1 {producto} agregado!", icon=icono)
+
+def quitar_del_carrito(producto):
+    if producto in st.session_state.carrito:
+        st.session_state.carrito[producto] -= 1
+        if st.session_state.carrito[producto] <= 0:
+            del st.session_state.carrito[producto] 
+        st.toast(f"¡1 {producto} quitado!", icon="➖")
 
 def obtener_total_items():
     return sum(st.session_state.carrito.values())
+
+def enviar_datos_excel(url, datos):
+    try:
+        requests.post(url, json=datos, timeout=5)
+    except:
+        pass
 
 @st.cache_data
 def get_img_as_base64(file):
@@ -47,12 +60,16 @@ st.markdown("""
     :root {
         --color-naranja: #FF6B00;
         --color-rojo: #D32F2F;
-        --color-crema: #FFF8E1;
+        --color-crema: #F4F6F8; /* BLANCO/GRIS QUE RELAJA LA VISTA */
         --color-texto: #212121;
     }
 
     header { visibility: hidden !important; }
     .stAppDeployButton, [data-testid="stToolbar"], [data-testid="stDecoration"], footer { display: none !important; }
+    
+    /* EVITAR PARPADEO GRIS AL RECARGAR */
+    [data-testid="stAppViewBlockContainer"], [data-testid="stVerticalBlock"] { opacity: 1 !important; }
+    [data-testid="stStatusWidget"] { display: none !important; }
     
     [data-testid="stAppViewContainer"], .stApp { 
         background-color: var(--color-crema) !important; 
@@ -62,7 +79,7 @@ st.markdown("""
     
     h1, h2, h3, h4, p, div, span, label, li { color: var(--color-texto) !important; }
 
-    /* ESTILO MODAL */
+    /* ESTILO MODAL NARANJA */
     div[role="dialog"] {
         background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo)) !important;
         border: 2px solid white;
@@ -72,7 +89,7 @@ st.markdown("""
         color: white !important;
     }
     
-    /* INPUTS */
+    /* INPUTS (CAJAS DE TEXTO) */
     div[role="dialog"] input, div[role="dialog"] textarea {
         background-color: white !important;
         color: #212121 !important;
@@ -90,7 +107,7 @@ st.markdown("""
     div[role="dialog"] div[data-baseweb="select"] svg { fill: var(--color-naranja) !important; }
     div[data-baseweb="popover"] div { background-color: white !important; color: #FF6B00 !important; font-weight: bold; }
 
-    /* TOASTS */
+    /* TOASTS (NOTIFICACIONES FLOTANTES NARANJAS CON TEXTO BLANCO) */
     div[data-baseweb="toast"] {
         background-color: var(--color-naranja) !important;
         border: 2px solid white;
@@ -108,26 +125,36 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
         position: relative;
     }
+    /* LOGO MÁS GRANDE */
     .logo-esquina {
-        position: absolute; top: 15px; left: 20px; width: 80px;
+        position: absolute; top: 15px; left: 20px; width: 100px;
         border-radius: 50%; border: 3px solid white;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
     .header-frase-peque { color: white !important; font-weight: 700; font-size: 1.2rem; margin: 0; }
     .header-frase-grande { color: white !important; font-weight: 900; font-size: 3rem; line-height: 1.1; margin: 0; }
 
-    /* BOTONES */
-    .stButton>button {
+    /* BOTONES CON EFECTO DE ILUMINACIÓN AL PASAR EL MOUSE */
+    .stButton>button, [data-testid="stFormSubmitButton"]>button {
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important;
         color: white !important;
         border: none;
         border-radius: 20px;
         font-weight: bold;
-        transition: transform 0.1s;
+        transition: all 0.2s ease; 
     }
-    .stButton>button:active { transform: scale(0.95); }
+    .stButton>button:hover, [data-testid="stFormSubmitButton"]>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(255, 107, 0, 0.4); 
+    }
+    .stButton>button:active, [data-testid="stFormSubmitButton"]>button:active { transform: scale(0.95); }
+    
     div[data-testid="column"] button[kind="primary"] {
         background: white !important; color: var(--color-rojo) !important; border: 2px solid var(--color-rojo) !important;
+    }
+    div[data-testid="column"] button[kind="primary"]:hover {
+        box-shadow: 0 8px 15px rgba(211, 47, 47, 0.3); 
+        transform: translateY(-2px);
     }
 
     /* TABS Y PRODUCTOS */
@@ -142,42 +169,82 @@ st.markdown("""
         border-left: 5px solid var(--color-naranja); margin-top: 20px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
+
+    /* EFECTO ZOOM EN IMÁGENES AL PASAR EL MOUSE */
+    [data-testid="stImage"] img { transition: transform 0.3s ease; border-radius: 10px; }
+    [data-testid="stImage"] img:hover { transform: scale(1.05); }
+    
+    .contador-item { text-align: center; font-weight: 900; font-size: 1.3rem; color: var(--color-rojo); margin-top: 5px; }
+
+    /* FOOTER (PIE DE PÁGINA BLINDADO PARA TEXTO BLANCO) */
+    .footer-container {
+        background-color: #1A1A1A !important;
+        padding: 2rem;
+        text-align: center;
+        border-radius: 20px 20px 0 0;
+        margin-top: 4rem;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
+    }
+    .footer-container, .footer-container h3, .footer-container p, .footer-container span, .footer-container div {
+        color: #FFFFFF !important; 
+    }
+    .footer-container a { color: var(--color-naranja) !important; text-decoration: none; font-weight: bold; margin: 0 10px; font-size: 1.2rem; }
+    .footer-container a:hover { color: var(--color-crema) !important; }
+    .texto-creditos { color: #888888 !important; font-size: 0.8rem !important; margin-top: 30px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. DATOS ---
-menu_tacos = {
-    "Taco de Res": {"precio": 14, "img": "imagenes/taco 1.jpg", "desc": "Suave bistec de res."},
-    "Taco de Puerco": {"precio": 14, "img": "imagenes/taco 2.jpg", "desc": "Adobado especial."},
-    "Taco de Tripa": {"precio": 14, "img": "imagenes/taco 3.jpg", "desc": "Doradita y crujiente."},
-    "Taco de Suadero": {"precio": 14, "img": "imagenes/taco 4.jpg", "desc": "Cocido en su jugo."}
-}
-menu_bebidas = {
-    "Agua de Horchata": {"precio": 20, "img": "imagenes/horchata.png", "desc": "Arroz y canela."},
-    "Agua de Jamaica": {"precio": 20, "img": "imagenes/jamaica.png", "desc": "Natural y fresca."},
-    "Senzao": {"precio": 25, "img": "imagenes/senzao.png", "desc": "Tradicional de Coita."}
-}
+# --- 4. BASE DE DATOS DEL MENÚ (GOOGLE SHEETS) ---
+@st.cache_data(ttl=10) 
+def cargar_menu(url_csv):
+    try:
+        df = pd.read_csv(url_csv)
+        tacos = {}
+        bebidas = {}
+        for _, row in df.iterrows():
+            categoria = str(row["Categoria"]).strip().lower()
+            nombre = str(row["Nombre"]).strip()
+            item = {
+                "precio": float(row["Precio"]),
+                "img": str(row["Imagen"]).strip(),
+                "desc": str(row["Descripcion"]).strip() if pd.notna(row["Descripcion"]) else ""
+            }
+            if categoria == "taco":
+                tacos[nombre] = item
+            elif categoria == "bebida":
+                bebidas[nombre] = item
+        return tacos, bebidas
+    except Exception as e:
+        return {}, {}
+
+URL_CSV_MENU = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTIoRwg327pe_n_h-paHJ2OMmufADQgIfeiTvXBWTzfnDyJn21dDhhSYq97WZIVb8ZzQfwaHlGGmvd/pub?gid=357751603&single=true&output=csv" 
+
+menu_tacos, menu_bebidas = cargar_menu(URL_CSV_MENU)
 menu_completo = {**menu_tacos, **menu_bebidas}
 
-# --- 5. VENTANA EMERGENTE (MODAL PERFECTO) ---
+if not menu_tacos and not menu_bebidas:
+    st.error("⚠️ No se pudo cargar el menú. Revisa tu Excel.")
+
+# --- 5. VENTANA EMERGENTE (MODAL PERFECTO CON FORMULARIO INVISIBLE) ---
 @st.dialog("🛒 TU PEDIDO")
 def mostrar_carrito_modal():
     
-    vista = st.empty()
-    
-    with vista.container():
+    if st.session_state.fase_pedido == 1:
+        if not st.session_state.carrito:
+            st.info("Tu carrito está vacío.")
+            return
+            
+        # CONTENEDOR MÁGICO (Todo lo que esté aquí adentro se puede borrar de un golpe)
+        vista_fase1 = st.empty()
         
-        # --- FASE 1: FORMULARIO Y CARRITO ---
-        if st.session_state.fase_pedido == 1:
-            if not st.session_state.carrito:
-                st.info("Tu carrito está vacío.")
-                return
-                
+        with vista_fase1.container():
             total_venta = 0
             texto_pedido = ""
             texto_para_excel = ""
             
             for item, cant in st.session_state.carrito.items():
+                if item not in menu_completo: continue 
+                
                 precio_u = menu_completo[item]["precio"]
                 subtotal = cant * precio_u
                 total_venta += subtotal
@@ -192,79 +259,78 @@ def mostrar_carrito_modal():
             st.divider()
             st.markdown(f"<h3 style='text-align: right; color: white !important;'>Total: ${total_venta}</h3>", unsafe_allow_html=True)
             
-            st.markdown("#### 📍 Datos de Envío")
-            nombre = st.text_input("Nombre:")
-            direccion = st.text_area("Dirección exacta:")
-            ref = st.text_input("Referencia de la casa:")
-            pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
-            
-            msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
-            
-            col_conf, col_vac = st.columns(2)
-            with col_conf:
-                confirmar = st.button("📝 CONFIRMAR PEDIDO", type="primary", use_container_width=True)
-            with col_vac:
-                vaciar = st.button("🗑️ Vaciar Carrito", use_container_width=True)
+            # EL FORMULARIO REGRESA PARA SOLUCIONAR EL DOBLE CLIC DEL CELULAR
+            with st.form("form_pedido", border=False):
+                st.markdown("#### 📍 Datos de Envío")
+                nombre = st.text_input("Nombre:")
+                direccion = st.text_area("Dirección exacta:")
+                ref = st.text_input("Referencia de la casa:")
+                notas = st.text_area("Instrucciones especiales (Opcional):", placeholder="Ej. Sin cebolla, salsas aparte...")
+                pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
                 
-            if vaciar:
+                confirmar = st.form_submit_button("📝 CONFIRMAR PEDIDO", type="secondary", use_container_width=True)
+            
+            if st.button("🗑️ Vaciar Carrito", use_container_width=True):
                 st.session_state.carrito = {}
                 st.rerun()
-                
-            # Si le dan a confirmar...
-            if confirmar:
-                if nombre and direccion:
-                    # 1. Guardar en Excel en silencio
-                    url_google = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec" # <--- ¡PON TU LINK AQUÍ!
-                    datos_excel = {
-                        "cliente": nombre,
-                        "direccion": f"{direccion} ({ref})",
-                        "pedido": texto_para_excel,
-                        "total": total_venta,
-                        "pago": pago
-                    }
-                    try:
-                        requests.post(url_google, json=datos_excel)
-                    except:
-                        pass
-                        
-                    # 2. Generar link de WhatsApp con codificación UTF-8 robusta para evitar rombos ()
-                    # Forzamos la codificación a utf-8 antes de armar la URL y usamos la API oficial.
-                    msg_encoded = urllib.parse.quote(msg_final.encode('utf-8'))
-                    st.session_state.whatsapp_url = f"https://api.whatsapp.com/send?phone=529681171392&text={msg_encoded}"
-                    st.session_state.fase_pedido = 2
-                    
-                    # 3. MAGIA: Borramos el formulario entero y dibujamos el botón de WA al instante
-                    vista.empty()
-                    with vista.container():
-                        st.markdown("""
-                            <div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; border: 2px solid white; text-align: center; margin-bottom: 20px;'>
-                                <h2>✅ ¡Casi listo!</h2>
-                                <p style="font-size: 1.1rem;">Tu pedido ya está anotado. Toca el botón para enviarnos el mensaje y prepararlo rápido.</p>
-                            </div>
-                        """, unsafe_allow_html=True)
-                        st.link_button("📲 ABRIR WHATSAPP AHORA", st.session_state.whatsapp_url, type="primary", use_container_width=True)
-                        
-                        if st.button("✨ Terminar y limpiar carrito", use_container_width=True):
-                            st.session_state.carrito = {}
-                            st.session_state.fase_pedido = 1
-                            st.rerun()
-                else:
-                    st.warning("⚠️ Completa tu nombre y dirección por favor.")
 
-        # --- FASE 2: (Por si ya confirmaron y la ventana se vuelve a dibujar) ---
-        elif st.session_state.fase_pedido == 2:
-            st.markdown("""
-                <div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; border: 2px solid white; text-align: center; margin-bottom: 20px;'>
-                    <h2>✅ ¡Casi listo!</h2>
-                    <p style="font-size: 1.1rem;">Tu pedido ya está anotado. Toca el botón para enviarnos el mensaje y prepararlo rápido.</p>
-                </div>
-            """, unsafe_allow_html=True)
-            st.link_button("📲 ABRIR WHATSAPP AHORA", st.session_state.whatsapp_url, type="primary", use_container_width=True)
-            
-            if st.button("✨ Terminar y limpiar carrito", use_container_width=True):
-                st.session_state.carrito = {}
-                st.session_state.fase_pedido = 1
-                st.rerun()
+        # LÓGICA AL CONFIRMAR (Destruye el formulario y dibuja la Fase 2 instantáneamente)
+        if confirmar:
+            if nombre and direccion:
+                msg_notas = f"\n📝 *Notas:* {notas}\n" if notas else "\n"
+                msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}{msg_notas}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
+
+                url_google_guardar = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec" 
+                
+                texto_excel_con_notas = texto_para_excel
+                if notas:
+                    texto_excel_con_notas += f" | NOTAS: {notas}"
+                    
+                datos_excel = {
+                    "cliente": nombre,
+                    "direccion": f"{direccion} ({ref})",
+                    "pedido": texto_excel_con_notas,
+                    "total": total_venta,
+                    "pago": pago
+                }
+                
+                threading.Thread(target=enviar_datos_excel, args=(url_google_guardar, datos_excel)).start()
+                    
+                msg_encoded = urllib.parse.quote(msg_final.encode('utf-8'))
+                st.session_state.whatsapp_url = f"https://api.whatsapp.com/send?phone=529681171392&text={msg_encoded}"
+                st.session_state.fase_pedido = 2
+                
+                # LA MAGIA: Limpiamos la pantalla y dibujamos el mensaje de éxito
+                vista_fase1.empty()
+                
+                st.markdown("""
+                    <div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; border: 2px solid white; text-align: center; margin-bottom: 20px;'>
+                        <h2>✅ ¡Casi listo!</h2>
+                        <p style="font-size: 1.1rem;">Tu pedido ya está anotado. Toca el botón para enviarnos el mensaje y prepararlo rápido.</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.link_button("📲 ABRIR WHATSAPP AHORA", st.session_state.whatsapp_url, type="secondary", use_container_width=True)
+                
+                if st.button("✨ Terminar y limpiar carrito", use_container_width=True):
+                    st.session_state.carrito = {}
+                    st.session_state.fase_pedido = 1
+                    st.rerun()
+            else:
+                st.error("⚠️ Completa tu nombre y dirección por favor.")
+
+    elif st.session_state.fase_pedido == 2:
+        st.markdown("""
+            <div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; border: 2px solid white; text-align: center; margin-bottom: 20px;'>
+                <h2>✅ ¡Casi listo!</h2>
+                <p style="font-size: 1.1rem;">Tu pedido ya está anotado. Toca el botón para enviarnos el mensaje y prepararlo rápido.</p>
+            </div>
+        """, unsafe_allow_html=True)
+        st.link_button("📲 ABRIR WHATSAPP AHORA", st.session_state.whatsapp_url, type="secondary", use_container_width=True)
+        
+        if st.button("✨ Terminar y limpiar carrito", use_container_width=True):
+            st.session_state.carrito = {}
+            st.session_state.fase_pedido = 1
+            st.rerun()
 
 # --- 6. INTERFAZ PRINCIPAL ---
 logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo-esquina">' if logo_base64 else ''
@@ -290,39 +356,55 @@ with col_carrito:
         tipo_btn = "primary"
         
     if st.button(label_btn, type=tipo_btn, use_container_width=True):
-        st.session_state.fase_pedido = 1 # Garantiza que si lo abres, empiece en Fase 1
+        st.session_state.fase_pedido = 1 
         mostrar_carrito_modal()
 
 tabs = st.tabs(["🌮 TACOS", "🥤 BEBIDAS", "📍 UBICACIÓN"])
 
 with tabs[0]:
-    cols = st.columns(2)
-    for i, (nombre, info) in enumerate(menu_tacos.items()):
-        with cols[i % 2]:
-            try: st.image(info["img"], use_container_width=True)
-            except: st.error("Sin imagen")
-            
-            st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='desc-prod'>{info['desc']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
-            
-            cantidad_actual = st.session_state.carrito.get(nombre, 0)
-            texto_boton = f"AGREGAR ({cantidad_actual}) 🛒" if cantidad_actual > 0 else "AGREGAR + 🛒"
-            st.button(texto_boton, key=f"t_{i}", on_click=agregar_al_carrito, args=(nombre, "taco"))
+    if not menu_tacos:
+        st.info("Aún no hay tacos en el menú. ¡Agrega algunos en tu Excel!")
+    else:
+        cols = st.columns(2)
+        for i, (nombre, info) in enumerate(menu_tacos.items()):
+            with cols[i % 2]:
+                try: st.image(info["img"], use_container_width=True)
+                except: st.error("Sin imagen")
+                
+                st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='desc-prod'>{info['desc']}</div>", unsafe_allow_html=True)
+                st.markdown(f"<span class='precio-tag'>${int(info['precio'])}</span>", unsafe_allow_html=True)
+                
+                cantidad_actual = st.session_state.carrito.get(nombre, 0)
+                if cantidad_actual > 0:
+                    col_min, col_num, col_plus = st.columns([1, 1.2, 1])
+                    with col_min: st.button("➖", key=f"min_t_{i}", on_click=quitar_del_carrito, args=(nombre,), use_container_width=True)
+                    with col_num: st.markdown(f"<div class='contador-item'>{cantidad_actual} 🛒</div>", unsafe_allow_html=True)
+                    with col_plus: st.button("➕", key=f"plus_t_{i}", on_click=agregar_al_carrito, args=(nombre, "taco"), use_container_width=True)
+                else:
+                    st.button("AGREGAR + 🛒", key=f"add_t_{i}", on_click=agregar_al_carrito, args=(nombre, "taco"), use_container_width=True)
 
 with tabs[1]:
-    cols_b = st.columns(3)
-    for i, (nombre, info) in enumerate(menu_bebidas.items()):
-        with cols_b[i % 3]:
-            try: st.image(info["img"], use_container_width=True)
-            except: st.info("Sin imagen")
-            
-            st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
-            st.markdown(f"<span class='precio-tag'>${info['precio']}</span>", unsafe_allow_html=True)
-            
-            cantidad_actual = st.session_state.carrito.get(nombre, 0)
-            texto_boton = f"AGREGAR ({cantidad_actual}) 🛒" if cantidad_actual > 0 else "AGREGAR + 🛒"
-            st.button(texto_boton, key=f"b_{i}", on_click=agregar_al_carrito, args=(nombre, "bebida"))
+    if not menu_bebidas:
+        st.info("Aún no hay bebidas en el menú. ¡Agrega algunas en tu Excel!")
+    else:
+        cols_b = st.columns(3)
+        for i, (nombre, info) in enumerate(menu_bebidas.items()):
+            with cols_b[i % 3]:
+                try: st.image(info["img"], use_container_width=True)
+                except: st.info("Sin imagen")
+                
+                st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
+                st.markdown(f"<span class='precio-tag'>${int(info['precio'])}</span>", unsafe_allow_html=True)
+                
+                cantidad_actual = st.session_state.carrito.get(nombre, 0)
+                if cantidad_actual > 0:
+                    col_min, col_num, col_plus = st.columns([1, 1.2, 1])
+                    with col_min: st.button("➖", key=f"min_b_{i}", on_click=quitar_del_carrito, args=(nombre,), use_container_width=True)
+                    with col_num: st.markdown(f"<div class='contador-item'>{cantidad_actual} 🥤</div>", unsafe_allow_html=True)
+                    with col_plus: st.button("➕", key=f"plus_b_{i}", on_click=agregar_al_carrito, args=(nombre, "bebida"), use_container_width=True)
+                else:
+                    st.button("AGREGAR + 🛒", key=f"add_b_{i}", on_click=agregar_al_carrito, args=(nombre, "bebida"), use_container_width=True)
 
 with tabs[2]:
     st.markdown("### 🗺️ Encuéntranos")
@@ -350,6 +432,21 @@ with tabs[2]:
         st.image("imagenes/local.png", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
     except:
         st.info("Guarda una foto llamada 'local.png' en la carpeta 'imagenes' para que aparezca aquí.")
+
+# --- 7. FOOTER CORREGIDO ---
+st.markdown("""
+    <div class='footer-container'>
+        <h3 style="margin-bottom: 5px;">🌮 El Taco Loco</h3>
+        <p style="margin-bottom: 20px;">Los mejores tacos de Coita, a un clic de distancia.</p>
+        <div>
+            <a href='https://www.facebook.com/share/1GSfLr4nxj/?mibextid=wwXIfr' target='_blank'>👍 Facebook</a>
+            <a href='#' target='_blank'>📸 Instagram</a>
+            <a href='#' target='_blank'>🎵 TikTok</a>
+        </div>
+        <p class="texto-creditos">Desarrollado por AleRmpz para El Taco Loco © 2026</p>
+    </div>
+""", unsafe_allow_html=True)
+
 
 
 

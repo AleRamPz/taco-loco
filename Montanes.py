@@ -64,28 +64,13 @@ st.markdown("""
         --color-texto: #212121;
     }
 
-    /* =======================================================
-       DESTRUCCIÓN TOTAL DE LA MARCA DE STREAMLIT (PC Y MÓVIL) 
-       ======================================================= */
-    header, footer, [data-testid="stToolbar"], [data-testid="stDecoration"], 
-    [data-testid="stStatusWidget"], #MainMenu { 
-        display: none !important; 
-        visibility: hidden !important; 
-    }
+    header { visibility: hidden !important; }
+    .stAppDeployButton, [data-testid="stToolbar"], [data-testid="stDecoration"], footer { display: none !important; }
     
-    div[class*="viewerBadge"], 
-    div[class*="stDeployButton"], 
-    a[href*="streamlit"], 
-    button[kind="header"] {
-        display: none !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        z-index: -9999 !important;
-    }
-    
+    /* EVITAR PARPADEO GRIS AL RECARGAR */
     [data-testid="stAppViewBlockContainer"], [data-testid="stVerticalBlock"] { opacity: 1 !important; }
-    /* ======================================================= */
-
+    [data-testid="stStatusWidget"] { display: none !important; }
+    
     [data-testid="stAppViewContainer"], .stApp { 
         background-color: var(--color-crema) !important; 
         font-family: 'Poppins', sans-serif;
@@ -122,7 +107,7 @@ st.markdown("""
     div[role="dialog"] div[data-baseweb="select"] svg { fill: var(--color-naranja) !important; }
     div[data-baseweb="popover"] div { background-color: white !important; color: #FF6B00 !important; font-weight: bold; }
 
-    /* TOASTS (NOTIFICACIONES FLOTANTES NARANJAS CON TEXTO BLANCO) */
+    /* TOASTS (NOTIFICACIONES FLOTANTES) */
     div[data-baseweb="toast"] {
         background-color: var(--color-naranja) !important;
         border: 2px solid white;
@@ -140,18 +125,21 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
         position: relative;
     }
-    /* LOGO MÁS GRANDE CENTRADO */
+    
+    /* SOLUCIÓN: LOGO CENTRADO Y ADAPTABLE A CELULARES */
     .logo-esquina {
         display: block;
-        margin: 0 auto 15px auto;
+        margin: 0 auto 15px auto; /* Lo centra y le da espacio abajo */
         width: 100px;
-        border-radius: 50%; border: 3px solid white;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        border-radius: 50%; 
+        border: 4px solid white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     }
+    
     .header-frase-peque { color: white !important; font-weight: 700; font-size: 1.2rem; margin: 0; }
     .header-frase-grande { color: white !important; font-weight: 900; font-size: 3rem; line-height: 1.1; margin: 0; }
 
-    /* BOTONES CON EFECTO DE ILUMINACIÓN AL PASAR EL MOUSE */
+    /* BOTONES */
     .stButton>button, [data-testid="stFormSubmitButton"]>button {
         background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important;
         color: white !important;
@@ -193,7 +181,7 @@ st.markdown("""
     
     .contador-item { text-align: center; font-weight: 900; font-size: 1.3rem; color: var(--color-rojo); margin-top: 5px; }
 
-    /* FOOTER (PIE DE PÁGINA BLINDADO PARA TEXTO BLANCO) */
+    /* FOOTER */
     .footer-container {
         background-color: #1A1A1A !important;
         padding: 2rem;
@@ -242,7 +230,7 @@ menu_completo = {**menu_tacos, **menu_bebidas}
 if not menu_tacos and not menu_bebidas:
     st.error("⚠️ No se pudo cargar el menú. Revisa tu Excel.")
 
-# --- 5. VENTANA EMERGENTE (MODAL PERFECTO CON FORMULARIO INVISIBLE) ---
+# --- 5. VENTANA EMERGENTE (MODAL) ---
 @st.dialog("🛒 TU PEDIDO")
 def mostrar_carrito_modal():
     
@@ -459,6 +447,7 @@ st.markdown("""
         <p class="texto-creditos">Desarrollado por AleRamPz para El Taco Loco © 2026</p>
     </div>
 """, unsafe_allow_html=True)
+
 
 
 

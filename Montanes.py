@@ -5,16 +5,23 @@ import base64
 import requests 
 import threading 
 
-# --- 1. CONFIGURACIÓN ---
+# ==========================================
+# 1. CONFIGURACIÓN INICIAL DE LA PÁGINA
+# ==========================================
 st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
 
-# --- 2. LÓGICA DEL CARRITO Y VELOCIDAD ---
+# ==========================================
+# 2. VARIABLES DE ESTADO Y MEMORIA (SESSION)
+# ==========================================
 if 'carrito' not in st.session_state:
     st.session_state.carrito = {}
 
 if 'fase_pedido' not in st.session_state:
     st.session_state.fase_pedido = 1
 
+# ==========================================
+# 3. FUNCIONES PRINCIPALES DEL SISTEMA
+# ==========================================
 def agregar_al_carrito(producto, tipo):
     if producto in st.session_state.carrito:
         st.session_state.carrito[producto] += 1
@@ -40,6 +47,7 @@ def enviar_datos_excel(url, datos):
     except:
         pass
 
+# Cargamos imágenes a la memoria RAM para ultra velocidad
 @st.cache_data
 def get_img_as_base64(file):
     try:
@@ -49,13 +57,19 @@ def get_img_as_base64(file):
     except:
         return None
 
-img_path = "imagenes/logo.png" 
-logo_base64 = get_img_as_base64(img_path)
+logo_base64 = get_img_as_base64("imagenes/logo.png")
+bg_base64 = get_img_as_base64("imagenes/fondo_tacos.png")
+historia_base64 = get_img_as_base64("imagenes/historia.png")
+local_base64 = get_img_as_base64("imagenes/local.png")
 
-bg_path = "imagenes/fondotacos.png" 
-bg_base64 = get_img_as_base64(bg_path)
+logo_src = f"data:image/png;base64,{logo_base64}" if logo_base64 else ""
+historia_src = f"data:image/png;base64,{historia_base64}" if historia_base64 else logo_src
+local_src = f"data:image/png;base64,{local_base64}" if local_base64 else logo_src
 
-# --- 3. ESTILOS CSS ---
+
+# ==========================================
+# 4. MOTOR VISUAL Y ESTILOS CSS BASE
+# ==========================================
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
 
@@ -69,211 +83,121 @@ st.markdown("""
 
     /* DESTRUCCIÓN TOTAL DE LA MARCA DE STREAMLIT */
     header, footer, [data-testid="stToolbar"], [data-testid="stDecoration"], 
-    [data-testid="stStatusWidget"], #MainMenu { 
-        display: none !important; 
-        visibility: hidden !important; 
-    }
+    [data-testid="stStatusWidget"], #MainMenu { display: none !important; visibility: hidden !important; }
     
     div[class*="viewerBadge"], 
     div[class*="stDeployButton"], 
     a[href*="streamlit"], 
-    button[kind="header"] {
-        display: none !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        z-index: -9999 !important;
+    button[kind="header"] { 
+        display: none !important; 
+        opacity: 0 !important; 
+        pointer-events: none !important; 
+        z-index: -9999 !important; 
     }
     
     [data-testid="stAppViewBlockContainer"], [data-testid="stVerticalBlock"] { opacity: 1 !important; }
 
-    /* =========================================================
-       NUEVO FONDO DE PATRÓN "DIBUJOS DE TIZA/LÁPIZ" (ESTILO FOGONCITO)
-       ========================================================= */
+    /* FONDO DIBUJOS DE TIZA */
     [data-testid="stAppViewContainer"], .stApp { 
         background-color: var(--color-crema) !important; 
-        /* Se inyectan trazos vectoriales a mano alzada (taco, chile, limón, totopo, aguacate) con opacidad del 6% */
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 200 200'%3E%3Cg stroke='%231D1D1F' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.06'%3E%3Cpath d='M20,80 C20,50 70,50 70,80 C70,85 20,85 20,80 Z'/%3E%3Cpath d='M25,75 Q45,60 65,75'/%3E%3Cpath d='M30,70 L35,60 M45,72 L47,58 M60,68 L58,58'/%3E%3Cpath d='M150,30 C170,30 180,60 160,80 C140,100 120,70 150,30 Z'/%3E%3Cpath d='M150,30 Q145,20 135,15'/%3E%3Ccircle cx='50' cy='150' r='20'/%3E%3Ccircle cx='50' cy='150' r='15'/%3E%3Cline x1='50' y1='135' x2='50' y2='165'/%3E%3Cline x1='35' y1='150' x2='65' y2='150'/%3E%3Cline x1='39' y1='139' x2='61' y2='161'/%3E%3Cline x1='39' y1='161' x2='61' y2='139'/%3E%3Cpath d='M140,150 C120,150 120,180 140,180 C160,180 160,150 140,150 Z'/%3E%3Ccircle cx='140' cy='168' r='8'/%3E%3Cpolygon points='90,100 110,60 130,100'/%3E%3Cpath d='M100,75 L102,77 M115,90 L117,92'/%3E%3Cpath d='M90,20 L95,25 M95,20 L90,25'/%3E%3Cpath d='M20,120 L25,125 M25,120 L20,125'/%3E%3Cpath d='M180,130 A5,5 0 0,1 190,130 A5,5 0 0,1 180,130'/%3E%3C/g%3E%3C/svg%3E") !important;
         background-size: 400px 400px;
         font-family: 'Inter', sans-serif !important;
     }
     .stApp { margin-top: -50px; }
-    
     h1, h2, h3, h4, p, div, span, label, li { color: var(--color-texto) !important; font-family: 'Inter', sans-serif; }
 
-    /* ESTILO MODAL NARANJA */
-    div[role="dialog"] {
-        background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo)) !important;
-        border: 2px solid white;
-        border-radius: 24px !important;
-    }
-    div[role="dialog"] h1, div[role="dialog"] h2, div[role="dialog"] h3, 
-    div[role="dialog"] p, div[role="dialog"] span, div[role="dialog"] label {
-        color: white !important;
-    }
-    
-    /* INPUTS (CAJAS DE TEXTO) */
-    div[role="dialog"] input, div[role="dialog"] textarea {
-        background-color: white !important;
-        color: #1D1D1F !important;
-        border: 2px solid transparent !important;
-        border-radius: 12px;
-        padding: 12px;
-        font-weight: 500;
-    }
+    /* MODAL Y BOTONES */
+    div[role="dialog"] { background: linear-gradient(135deg, var(--color-naranja), var(--color-rojo)) !important; border: 2px solid white; border-radius: 24px !important; }
+    div[role="dialog"] h1, div[role="dialog"] h2, div[role="dialog"] h3, div[role="dialog"] p, div[role="dialog"] span, div[role="dialog"] label { color: white !important; }
+    div[role="dialog"] input, div[role="dialog"] textarea { background-color: white !important; color: #1D1D1F !important; border: 2px solid transparent !important; border-radius: 12px; padding: 12px; font-weight: 500; }
     div[role="dialog"] input:focus, div[role="dialog"] textarea:focus { border: 2px solid #1D1D1F !important; }
     div[role="dialog"] input::placeholder, div[role="dialog"] textarea::placeholder { color: #888888 !important; font-weight: 400; }
-
-    div[role="dialog"] div[data-baseweb="select"] > div {
-        background-color: white !important;
-        border: 2px solid transparent !important;
-        border-radius: 12px;
-    }
+    div[role="dialog"] div[data-baseweb="select"] > div { background-color: white !important; border: 2px solid transparent !important; border-radius: 12px; }
     div[role="dialog"] div[data-baseweb="select"] span { color: #1D1D1F !important; font-weight: 600; }
-    
     div[data-baseweb="popover"] div { background-color: white !important; color: #FF6B00 !important; font-weight: 700; }
-
-    /* TOASTS */
-    div[data-baseweb="toast"] {
-        background-color: var(--color-naranja) !important;
-        border: 2px solid white;
-        border-radius: 12px;
-    }
+    div[data-baseweb="toast"] { background-color: var(--color-naranja) !important; border: 2px solid white; border-radius: 12px; }
     div[data-baseweb="toast"] div { color: white !important; font-weight: 700; }
 
-    /* HEADER */
-    .header-container {
-        background-color: #1A1A1A;
-        padding: 4.5rem 2rem; 
-        border-radius: 0 0 30px 30px;
-        text-align: center;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        position: relative;
-        border-bottom: 5px solid var(--color-naranja); 
-    }
-    
-    .logo-esquina {
-        display: block;
-        margin: 0 auto 15px auto;
-        width: 110px; 
-        border-radius: 50%; border: 4px solid white;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-    
-    .header-frase-peque { 
-        color: var(--color-naranja) !important; 
-        font-weight: 900; 
-        font-size: 1.2rem; 
-        margin: 0; 
-        letter-spacing: 4px; 
-        text-transform: uppercase;
-        text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
-    }
-    .header-frase-grande { 
-        color: white !important; 
-        font-family: 'Oswald', sans-serif !important; 
-        font-weight: 700; 
-        font-size: 4.5rem; 
-        line-height: 1.1; 
-        margin: 5px 0 0 0; 
-        text-shadow: 3px 3px 15px rgba(0,0,0,0.7); 
-        text-transform: uppercase;
-    }
+    /* HEADER BÁSICO */
+    .header-container { background-color: #1A1A1A; padding: 4.5rem 2rem; border-radius: 0 0 30px 30px; text-align: center; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); position: relative; border-bottom: 5px solid var(--color-naranja); }
+    .logo-esquina { display: block; margin: 0 auto 15px auto; width: 110px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    .header-frase-peque { color: var(--color-naranja) !important; font-weight: 900; font-size: 1.2rem; margin: 0; letter-spacing: 4px; text-transform: uppercase; text-shadow: 1px 1px 5px rgba(0,0,0,0.5); }
+    .header-frase-grande { color: white !important; font-family: 'Oswald', sans-serif !important; font-weight: 700; font-size: 4.5rem; line-height: 1.1; margin: 5px 0 0 0; text-shadow: 3px 3px 15px rgba(0,0,0,0.7); text-transform: uppercase; }
 
-    /* BOTONES ESTILO PREMIUM */
-    .stButton>button, [data-testid="stFormSubmitButton"]>button {
-        background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important;
-        color: white !important;
-        border: none;
-        border-radius: 25px;
-        font-weight: 700;
-        font-size: 1rem;
-        padding: 10px 0;
-        transition: all 0.2s ease; 
-    }
-    .stButton>button:hover, [data-testid="stFormSubmitButton"]>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(255, 107, 0, 0.4); 
-    }
+    /* BOTONES */
+    .stButton>button, [data-testid="stFormSubmitButton"]>button { background: linear-gradient(45deg, var(--color-naranja), var(--color-rojo)) !important; color: white !important; border: none; border-radius: 25px; font-weight: 700; font-size: 1rem; padding: 10px 0; transition: all 0.2s ease; }
+    .stButton>button:hover, [data-testid="stFormSubmitButton"]>button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255, 107, 0, 0.4); }
     .stButton>button:active, [data-testid="stFormSubmitButton"]>button:active { transform: scale(0.95); }
-    
-    div[data-testid="column"] button[kind="primary"] {
-        background: white !important; color: var(--color-rojo) !important; border: 2px solid var(--color-rojo) !important;
-    }
-    div[data-testid="column"] button[kind="primary"]:hover {
-        box-shadow: 0 8px 15px rgba(211, 47, 47, 0.2); 
-        transform: translateY(-2px);
-    }
+    div[data-testid="column"] button[kind="primary"] { background: white !important; color: var(--color-rojo) !important; border: 2px solid var(--color-rojo) !important; }
+    div[data-testid="column"] button[kind="primary"]:hover { box-shadow: 0 8px 15px rgba(211, 47, 47, 0.2); transform: translateY(-2px); }
 
-    /* TABS Y PRODUCTOS */
+    /* TABS Y TARJETAS */
     .stTabs [data-baseweb="tab-list"] { background-color: transparent; padding: 5px; gap: 10px; }
     .stTabs [data-baseweb="tab"] { background-color: white !important; color: #888888 !important; font-weight: 600; border-radius: 20px; padding: 10px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
     .stTabs [aria-selected="true"] { background-color: var(--color-naranja) !important; color: white !important; box-shadow: 0 5px 15px rgba(255, 107, 0, 0.3); }
-    
-    [data-testid="column"] { 
-        background: rgba(255, 255, 255, 0.85); /* Transparencia para que el patrón se vea sutilmente por detrás de las tarjetas */
-        backdrop-filter: blur(5px);
-        padding: 20px; 
-        border-radius: 20px; 
-        margin-bottom: 10px; 
-        border: 1px solid rgba(0,0,0,0.03);
-    }
+    [data-testid="column"] { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(5px); padding: 20px; border-radius: 20px; margin-bottom: 10px; border: 1px solid rgba(0,0,0,0.03); }
     .precio-tag { color: var(--color-naranja) !important; font-weight: 900; font-size: 1.6rem; display: block; margin-bottom: 15px; }
     .nombre-prod { font-size: 1.3rem; font-weight: 800; color: #1D1D1F !important; margin-top: 10px; }
     .desc-prod { font-size: 0.95rem; color: #888888 !important; margin-bottom: 15px; line-height: 1.4; font-weight: 500;}
-    
-    .ubicacion-box {
-        background-color: rgba(255, 255, 255, 0.9); padding: 25px; border-radius: 20px; 
-        border-left: 5px solid var(--color-naranja); margin-top: 20px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    }
-
-    /* EFECTO ZOOM EN IMÁGENES AL PASAR EL MOUSE */
+    .ubicacion-box { background-color: rgba(255, 255, 255, 0.9); padding: 25px; border-radius: 20px; border-left: 5px solid var(--color-naranja); margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
     [data-testid="stImage"] img { transition: transform 0.4s ease; border-radius: 12px; }
     [data-testid="stImage"] img:hover { transform: scale(1.04); }
-    
     .contador-item { text-align: center; font-weight: 900; font-size: 1.4rem; color: var(--color-texto); margin-top: 5px; }
 
-    /* FOOTER (NUEVO CON IMAGEN Y DEGRADADO) */
-    .footer-container {
-        background-color: #1A1A1A;
-        padding: 4rem 2rem;
-        text-align: center;
-        border-radius: 30px 30px 0 0;
-        margin-top: 5rem;
-        box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
-        border-top: 5px solid var(--color-naranja);
-    }
-    .footer-container, .footer-container h3, .footer-container p, .footer-container span, .footer-container div {
-        color: #FFFFFF !important; 
-    }
+    /* SECCIÓN CONÓCENOS (HISTORIA, CARRUSEL Y VALORES) */
+    .about-hero { text-align: center; margin-bottom: 40px; margin-top: 10px;}
+    .about-hero h2 { font-family: 'Oswald', sans-serif !important; font-size: 3rem; color: var(--color-naranja) !important; line-height: 1.1; letter-spacing: -1px; margin-bottom: 5px; }
+    .about-hero p { font-size: 1.2rem; color: var(--color-texto) !important; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 2px; }
+    
+    .about-grid { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; margin-bottom: 50px; }
+    .about-text-box { flex: 1; min-width: 300px; padding: 10px; }
+    .about-text-box p { font-size: 1.1rem; line-height: 1.7; color: #1D1D1F !important; text-align: justify; margin-bottom: 15px; font-weight: 500; }
+    
+    /* CARRUSEL DE IMÁGENES */
+    .carousel-wrapper { flex: 1; min-width: 300px; height: 400px; position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.15); border: 4px solid white; background-color: #EEE; }
+    .img-carrusel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 16px; transition: transform 0.5s ease; }
+    @keyframes fadeEffect { 0%, 35% { opacity: 1; } 45%, 85% { opacity: 0; } 100% { opacity: 1; } }
+    .img-top { animation: fadeEffect 8s infinite cubic-bezier(0.4, 0, 0.2, 1); z-index: 2; }
+    .img-bottom { z-index: 1; }
+    .carousel-wrapper:hover .img-carrusel { transform: scale(1.05); }
+
+    /* GRID DE VALORES */
+    .valores-title { text-align: center; font-family: 'Oswald', sans-serif !important; color: var(--color-rojo) !important; font-size: 2.2rem; margin-bottom: 30px; text-transform: uppercase; }
+    .valores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .valor-item { background: white; padding: 25px 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid var(--color-naranja); display: flex; align-items: flex-start; gap: 18px; transition: transform 0.2s ease; }
+    .valor-item:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .valor-icon svg { width: 32px; height: 32px; fill: var(--color-naranja); flex-shrink: 0; }
+    div[data-testid="stAppViewContainer"] .valor-text h4 { margin: 0 0 8px 0; color: #1D1D1F !important; font-family: 'Oswald', sans-serif !important; font-size: 1.35rem; letter-spacing: 0.5px; text-transform: uppercase; }
+    div[data-testid="stAppViewContainer"] .valor-text p { margin: 0; color: #666 !important; font-size: 0.95rem; line-height: 1.4; }
+
+    /* FOOTER BÁSICO */
+    .footer-container { background-color: #1A1A1A; padding: 4rem 2rem; text-align: center; border-radius: 30px 30px 0 0; margin-top: 5rem; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); border-top: 5px solid var(--color-naranja); }
+    .footer-container, .footer-container h3, .footer-container p, .footer-container span, .footer-container div { color: #FFFFFF !important; }
     .footer-container h3 { font-family: 'Oswald', sans-serif !important; font-size: 2.5rem; letter-spacing: 1px; text-shadow: 2px 2px 10px rgba(0,0,0,0.8); }
-    .footer-container a { color: var(--color-naranja) !important; text-decoration: none; font-weight: 700; margin: 0 15px; font-size: 1.1rem; }
-    .footer-container a:hover { color: white !important; }
+    .social-link svg { transition: transform 0.3s ease, fill 0.3s ease; fill: var(--color-naranja); margin: 0 15px; }
+    .social-link:hover svg { fill: white !important; transform: scale(1.2); }
     .texto-creditos { color: #CCCCCC !important; font-size: 0.85rem !important; margin-top: 40px !important; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; text-shadow: 1px 1px 5px rgba(0,0,0,0.8); }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# INYECCIÓN DE LA IMAGEN DE FONDO (PARA EL HEADER Y AHORA EL FOOTER)
+# INYECCIÓN DINÁMICA DE LA IMAGEN DE FONDO (SEPARADO PARA EVITAR BUGS DE MARKDOWN)
 if bg_base64:
     st.markdown(f"""
         <style>
-        .header-container {{
-            background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.85)), url('data:image/jpeg;base64,{bg_base64}') center/cover no-repeat !important;
-        }}
-        .footer-container {{
-            background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.6)), url('data:image/jpeg;base64,{bg_base64}') center/cover no-repeat !important;
-        }}
+        .header-container {{ background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.85)), url('data:image/png;base64,{bg_base64}') center/cover no-repeat !important; }}
+        .footer-container {{ background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.6)), url('data:image/png;base64,{bg_base64}') center/cover no-repeat !important; }}
         </style>
     """, unsafe_allow_html=True)
 
-# --- 4. BASE DE DATOS DEL MENÚ (GOOGLE SHEETS) ---
-@st.cache_data(ttl=10) 
+# ==========================================
+# 5. BASE DE DATOS DEL MENÚ (GOOGLE SHEETS)
+# ==========================================
+@st.cache_data(ttl=15) 
 def cargar_menu(url_csv):
     try:
         df = pd.read_csv(url_csv)
-        tacos = {}
-        bebidas = {}
+        tacos, bebidas = {}, {}
         for _, row in df.iterrows():
             categoria = str(row["Categoria"]).strip().lower()
             nombre = str(row["Nombre"]).strip()
@@ -282,45 +206,39 @@ def cargar_menu(url_csv):
                 "img": str(row["Imagen"]).strip(),
                 "desc": str(row["Descripcion"]).strip() if pd.notna(row["Descripcion"]) else ""
             }
-            if categoria == "taco":
-                tacos[nombre] = item
-            elif categoria == "bebida":
-                bebidas[nombre] = item
+            if categoria == "taco": tacos[nombre] = item
+            elif categoria == "bebida": bebidas[nombre] = item
         return tacos, bebidas
-    except Exception as e:
+    except Exception:
         return {}, {}
 
 URL_CSV_MENU = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTIoRwg327pe_n_h-paHJ2OMmufADQgIfeiTvXBWTzfnDyJn21dDhhSYq97WZIVb8ZzQfwaHlGGmvd/pub?gid=357751603&single=true&output=csv" 
-
 menu_tacos, menu_bebidas = cargar_menu(URL_CSV_MENU)
 menu_completo = {**menu_tacos, **menu_bebidas}
 
 if not menu_tacos and not menu_bebidas:
     st.error("⚠️ No se pudo cargar el menú. Revisa tu Excel.")
 
-# --- 5. VENTANA EMERGENTE (MODAL) ---
+# ==========================================
+# 6. LOGICA DEL MODAL DE PEDIDOS (CARRITO)
+# ==========================================
 @st.dialog("Tu Pedido")
 def mostrar_carrito_modal():
-    
     if st.session_state.fase_pedido == 1:
         if not st.session_state.carrito:
             st.info("Tu carrito está vacío.")
             return
             
         vista_fase1 = st.empty()
-        
         with vista_fase1.container():
             total_venta = 0
             texto_pedido = ""
             texto_para_excel = ""
-            
             for item, cant in st.session_state.carrito.items():
                 if item not in menu_completo: continue 
-                
                 precio_u = menu_completo[item]["precio"]
                 subtotal = cant * precio_u
                 total_venta += subtotal
-                
                 c1, c2, c3 = st.columns([3, 1, 1])
                 c1.markdown(f"**{item}**")
                 c2.markdown(f"x{cant}")
@@ -338,7 +256,6 @@ def mostrar_carrito_modal():
                 ref = st.text_input("Referencia de la casa:")
                 notas = st.text_area("Instrucciones especiales (Opcional):", placeholder="Ej. Sin cebolla, salsas aparte...")
                 pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
-                
                 confirmar = st.form_submit_button("Hacer Pedido", type="secondary", use_container_width=True)
             
             if st.button("Vaciar Carrito", use_container_width=True):
@@ -349,37 +266,18 @@ def mostrar_carrito_modal():
             if nombre and direccion:
                 msg_notas = f"\n📝 *Notas:* {notas}\n" if notas else "\n"
                 msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}{msg_notas}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
-
                 url_google_guardar = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec" 
-                
                 texto_excel_con_notas = texto_para_excel
-                if notas:
-                    texto_excel_con_notas += f" | NOTAS: {notas}"
-                    
-                datos_excel = {
-                    "cliente": nombre,
-                    "direccion": f"{direccion} ({ref})",
-                    "pedido": texto_excel_con_notas,
-                    "total": total_venta,
-                    "pago": pago
-                }
+                if notas: texto_excel_con_notas += f" | NOTAS: {notas}"
+                datos_excel = {"cliente": nombre, "direccion": f"{direccion} ({ref})", "pedido": texto_excel_con_notas, "total": total_venta, "pago": pago}
                 
                 threading.Thread(target=enviar_datos_excel, args=(url_google_guardar, datos_excel)).start()
-                    
                 msg_encoded = urllib.parse.quote(msg_final.encode('utf-8'))
                 st.session_state.whatsapp_url = f"https://api.whatsapp.com/send?phone=529681171392&text={msg_encoded}"
                 st.session_state.fase_pedido = 2
-                
                 vista_fase1.empty()
-                
-                st.markdown("""
-                    <div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 15px; border: 2px solid white; text-align: center; margin-bottom: 20px;'>
-                        <h2>¡Pedido registrado!</h2>
-                        <p style="font-size: 1.1rem;">Toca el botón para enviarnos tu pedido por WhatsApp y prepararlo rápido.</p>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.markdown("<div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 15px; border: 2px solid white; text-align: center; margin-bottom: 20px;'><h2>¡Pedido registrado!</h2><p style='font-size: 1.1rem;'>Toca el botón para enviarnos tu pedido por WhatsApp y prepararlo rápido.</p></div>", unsafe_allow_html=True)
                 st.link_button("Enviar WhatsApp ahora", st.session_state.whatsapp_url, type="secondary", use_container_width=True)
-                
                 if st.button("Terminar y limpiar", use_container_width=True):
                     st.session_state.carrito = {}
                     st.session_state.fase_pedido = 1
@@ -388,20 +286,16 @@ def mostrar_carrito_modal():
                 st.error("⚠️ Completa tu nombre y dirección por favor.")
 
     elif st.session_state.fase_pedido == 2:
-        st.markdown("""
-            <div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 15px; border: 2px solid white; text-align: center; margin-bottom: 20px;'>
-                <h2>¡Pedido registrado!</h2>
-                <p style="font-size: 1.1rem;">Toca el botón para enviarnos tu pedido por WhatsApp y prepararlo rápido.</p>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown("<div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 15px; border: 2px solid white; text-align: center; margin-bottom: 20px;'><h2>¡Pedido registrado!</h2><p style='font-size: 1.1rem;'>Toca el botón para enviarnos tu pedido por WhatsApp y prepararlo rápido.</p></div>", unsafe_allow_html=True)
         st.link_button("Enviar WhatsApp ahora", st.session_state.whatsapp_url, type="secondary", use_container_width=True)
-        
         if st.button("Terminar y limpiar", use_container_width=True):
             st.session_state.carrito = {}
             st.session_state.fase_pedido = 1
             st.rerun()
 
-# --- 6. INTERFAZ PRINCIPAL ---
+# ==========================================
+# 7. ESTRUCTURA VISUAL DE LA PÁGINA (UI)
+# ==========================================
 logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo-esquina">' if logo_base64 else ''
 st.markdown(f"""
     <div class="header-container">
@@ -409,7 +303,7 @@ st.markdown(f"""
         <p class="header-frase-peque">¿CON HAMBRE?</p>
         <p class="header-frase-grande">REVISA NUESTRO MENÚ</p>
     </div>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 col_titulo, col_carrito = st.columns([7, 2])
 with col_titulo:
@@ -419,16 +313,14 @@ with col_carrito:
     total_items = obtener_total_items()
     label_btn = "🛒 Ver Pedido"
     tipo_btn = "secondary"
-    
     if total_items > 0:
         label_btn = f"🛒 Ver Pedido ({total_items})"
         tipo_btn = "primary"
-        
     if st.button(label_btn, type=tipo_btn, use_container_width=True):
         st.session_state.fase_pedido = 1 
         mostrar_carrito_modal()
 
-tabs = st.tabs(["Tacos", "Bebidas", "Ubicación"])
+tabs = st.tabs(["Tacos", "Bebidas", "Ubicación", "Conócenos"])
 
 with tabs[0]:
     if not menu_tacos:
@@ -439,11 +331,9 @@ with tabs[0]:
             with cols[i % 2]:
                 try: st.image(info["img"], use_container_width=True)
                 except: st.error("Sin imagen")
-                
                 st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
                 st.markdown(f"<div class='desc-prod'>{info['desc']}</div>", unsafe_allow_html=True)
                 st.markdown(f"<span class='precio-tag'>${int(info['precio'])}</span>", unsafe_allow_html=True)
-                
                 cantidad_actual = st.session_state.carrito.get(nombre, 0)
                 if cantidad_actual > 0:
                     col_min, col_num, col_plus = st.columns([1, 1.2, 1])
@@ -462,10 +352,8 @@ with tabs[1]:
             with cols_b[i % 3]:
                 try: st.image(info["img"], use_container_width=True)
                 except: st.info("Sin imagen")
-                
                 st.markdown(f"<div class='nombre-prod'>{nombre}</div>", unsafe_allow_html=True)
                 st.markdown(f"<span class='precio-tag'>${int(info['precio'])}</span>", unsafe_allow_html=True)
-                
                 cantidad_actual = st.session_state.carrito.get(nombre, 0)
                 if cantidad_actual > 0:
                     col_min, col_num, col_plus = st.columns([1, 1.2, 1])
@@ -477,44 +365,104 @@ with tabs[1]:
 
 with tabs[2]:
     st.markdown("### Encuéntranos")
-    mapa_html = """
-    <iframe 
-        src="https://www.google.com/maps?q=16.753554732500405,-93.37373160552643&hl=es&z=16&output=embed" 
-        width="100%" height="350" 
-        style="border:0; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" 
-        allowfullscreen="" loading="lazy">
-    </iframe>
-    """
+    mapa_html = """<iframe src="https://www.google.com/maps?q=16.753554732500405,-93.37373160552643&hl=es&z=16&output=embed" width="100%" height="350" style="border:0; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" allowfullscreen="" loading="lazy"></iframe>"""
     st.markdown(mapa_html, unsafe_allow_html=True)
-    
-    st.markdown("""
-        <div class='ubicacion-box'>
-            <h4 style='color: #FF6B00 !important; margin-top: 0;'>📍 Dirección</h4>
-            <p><strong>El Taco Loco</strong><br>Ocozocoautla de Espinosa, Chiapas.</p>
-            <h4 style='color: #FF6B00 !important; margin-top: 15px;'>🕒 Horario</h4>
-            <p>Lunes a Domingo: <strong>6:00 PM - 12:00 AM</strong></p>
+    st.markdown("<div class='ubicacion-box'><h4 style='color: #FF6B00 !important; margin-top: 0;'>📍 Dirección</h4><p><strong>El Taco Loco</strong><br>Ocozocoautla de Espinosa, Chiapas.</p><h4 style='color: #FF6B00 !important; margin-top: 15px;'>🕒 Horario</h4><p>Lunes a Domingo: <strong>6:00 PM - 12:00 AM</strong></p></div>", unsafe_allow_html=True)
+    st.markdown("#### Conoce nuestro local:")
+    try: st.image("imagenes/local.png", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
+    except: st.info("Guarda una foto llamada 'local.png' en la carpeta 'imagenes' para que aparezca aquí.")
+
+with tabs[3]:
+    st.markdown(f"""
+        <div class="about-hero">
+            <h2>EL TACO LOCO: 20 AÑOS DE TRADICIÓN</h2>
+            <p>Una empresa 100% familiar hecha en Ocozocoautla</p>
+        </div>
+        
+        <div class="about-grid">
+            <div class="about-text-box">
+                <p>Nuestra historia comenzó en noviembre de 2005, no como un gran plan de negocios, sino por el inmenso amor de una madre. Ante la necesidad económica y el deseo de sacar adelante a su familia, <strong>Ana Lleli García Espinosa</strong> tomó la valiente decisión de empezar a vender tacos.</p>
+                <p>Lo que hoy es un legado, empezó con un esfuerzo enorme. Trabajando de viernes a domingo, Ana Lleli cocinaba los tres sabores que hoy son nuestra insignia —res, puerco y tripa— y salía de manera arriesgada a ofrecerlos de casa en casa, esperando que los vecinos confiaran en su sazón.</p>
+                <p>El trabajo duro rindió frutos. Ese esfuerzo a pie se convirtió en el capital suficiente para comprar una caseta, nuestro primer local oficial. Con el tiempo y el éxito de esa receta inigualable, su esposo, <strong>Bolivar Montones Lizarde</strong>, se sumó al proyecto, logrando abrir una segunda caseta.</p>
+                <p>Hoy, a casi dos décadas de que Ana Lleli diera el primer paso, la tradición se fortalece con la llegada de la nueva generación: su hijo <strong>Jonathan Montanes</strong>. En El Taco Loco seguimos siendo ese mismo negocio familiar, manteniendo intacto el sabor de los tres tacos que lo iniciaron todo y demostrando que el trabajo hecho con cariño siempre prospera.</p>
+            </div>
+            <div class="carousel-wrapper">
+                <img src="{historia_src}" class="img-carrusel img-bottom" alt="Historia del Taco Loco">
+                <img src="{local_src}" class="img-carrusel img-top" alt="Local El Taco Loco">
+            </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 30px; background-color: #FFFFFF !important; padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-top: 5px solid #FF6B00; border-bottom: 5px solid #FF6B00; margin-bottom: 50px;">
+            <div style="flex: 1; min-width: 250px;">
+                <h3 style="color: #FF6B00 !important; font-family: 'Oswald', sans-serif !important; font-size: 1.8rem; margin-bottom: 15px; border-bottom: 2px solid rgba(255,107,0,0.2); padding-bottom: 10px; letter-spacing: 1px; margin-top: 0;">🎯 NUESTRA MISIÓN</h3>
+                <p style="color: #1D1D1F !important; line-height: 1.6; font-size: 1.05rem; font-weight: 500; margin: 0;">Ofrecer a cada cliente una experiencia auténtica y deliciosa, sirviendo tacos tradicionales de res, puerco y tripa con el sabor casero que nos define. Brindamos un servicio excepcional y cercano, marcado por la calidez, paciencia y el amor de una familia que ha crecido sirviendo, haciendo que cada persona se sienta bienvenida y valorada.</p>
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+                <h3 style="color: #FF6B00 !important; font-family: 'Oswald', sans-serif !important; font-size: 1.8rem; margin-bottom: 15px; border-bottom: 2px solid rgba(255,107,0,0.2); padding-bottom: 10px; letter-spacing: 1px; margin-top: 0;">👁️ NUESTRA VISIÓN</h3>
+                <p style="color: #1D1D1F !important; line-height: 1.6; font-size: 1.05rem; font-weight: 500; margin: 0;">Consolidarnos como la taquería de tradición preferida en nuestra comunidad, siendo un referente de cómo el sabor inigualable y la atención humana pueden perdurar por generaciones. Aspiramos a ser un legado familiar que inspire, demostrando que el trabajo hecho con cariño y perseverancia es el ingrediente principal del éxito.</p>
+            </div>
+        </div>
+
+        <h2 class="valores-title">NUESTROS VALORES</h2>
+        <div class="valores-grid">
+            <div class="valor-item">
+                <div class="valor-icon"><svg viewBox="0 0 24 24"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg></div>
+                <div class="valor-text">
+                    <h4>Calidad y Sabor</h4>
+                    <p>Compromiso total con un sabor auténtico y delicioso en cada bocado.</p>
+                </div>
+            </div>
+            <div class="valor-item">
+                <div class="valor-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg></div>
+                <div class="valor-text">
+                    <h4>Servicio Amable</h4>
+                    <p>Creemos que un buen taco se disfruta más con una sonrisa. Atendemos con respeto y paciencia.</p>
+                </div>
+            </div>
+            <div class="valor-item">
+                <div class="valor-icon"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+                <div class="valor-text">
+                    <h4>Pasión y Cariño</h4>
+                    <p>Hacemos nuestro trabajo con amor genuino todos los días, y se nota en la comida.</p>
+                </div>
+            </div>
+            <div class="valor-item">
+                <div class="valor-icon"><svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg></div>
+                <div class="valor-text">
+                    <h4>Perseverancia</h4>
+                    <p>Honramos nuestra historia. El éxito se construye día a día con constancia absoluta.</p>
+                </div>
+            </div>
+            <div class="valor-item">
+                <div class="valor-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+                <div class="valor-text">
+                    <h4>Unión Familiar</h4>
+                    <p>Somos un equipo unido por lazos de familia. Esa unidad se refleja en nuestro servicio.</p>
+                </div>
+            </div>
+            <div class="valor-item">
+                <div class="valor-icon"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></div>
+                <div class="valor-text">
+                    <h4>Honestidad</h4>
+                    <p>Actuamos con total transparencia en la calidad de los productos que te ofrecemos.</p>
+                </div>
+            </div>
         </div>
     """, unsafe_allow_html=True)
-    
-    st.markdown("#### Conoce nuestro local:")
-    try:
-        st.image("imagenes/local.png", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
-    except:
-        st.info("Guarda una foto llamada 'local.png' en la carpeta 'imagenes' para que aparezca aquí.")
 
-# --- 7. FOOTER REDISEÑADO ---
 st.markdown("""
     <div class='footer-container'>
         <h3 style="margin-bottom: 5px;">El Taco Loco</h3>
-        <p style="margin-bottom: 20px; font-weight: 500;">Los mejores tacos de Coita, a un clic de distancia.</p>
-        <div>
-            <a href='https://www.facebook.com/share/1GSfLr4nxj/?mibextid=wwXIfr' target='_blank'>Facebook</a>
-            <a href='#' target='_blank'>Instagram</a>
-            <a href='#' target='_blank'>TikTok</a>
+        <p style="margin-bottom: 30px; font-weight: 500;">Los mejores tacos de Coita, a un clic de distancia.</p>
+        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+            <a href='https://www.facebook.com/share/1GSfLr4nxj/?mibextid=wwXIfr' target='_blank' title="Facebook" class="social-link"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M22.675 0h-21.35C.597 0 0 .597 0 1.325v21.351C0 23.403.597 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.73 0 1.323-.597 1.323-1.324V1.325C24 .597 23.403 0 22.675 0z"/></svg></a>
+            <a href='#' target='_blank' title="Instagram" class="social-link"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 1.76-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 1.76 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-1.762 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-1.778-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>
+            <a href='#' target='_blank' title="TikTok" class="social-link"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.53 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></a>
         </div>
         <p class="texto-creditos">© 2026 ElTacoLoco. Todos los derechos reservados. Hecho con 🔥 por AleRampz</p>
     </div>
 """, unsafe_allow_html=True)
+
 
 
 

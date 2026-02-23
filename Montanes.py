@@ -8,7 +8,7 @@ import threading
 # ==========================================
 # 1. CONFIGURACIÓN INICIAL DE LA PÁGINA
 # ==========================================
-st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
+st.set_page_config(page_title="ELTACOLOCO", page_icon="🌮", layout="wide")
 
 # ==========================================
 # 2. VARIABLES DE ESTADO Y MEMORIA (SESSION)
@@ -58,7 +58,7 @@ def get_img_as_base64(file):
         return None
 
 logo_base64 = get_img_as_base64("imagenes/logo.png")
-bg_base64 = get_img_as_base64("imagenes/fondo_tacos.png")
+bg_base64 = get_img_as_base64("imagenes/fondotacos.png")
 historia_base64 = get_img_as_base64("imagenes/historia.png")
 local_base64 = get_img_as_base64("imagenes/local.png")
 
@@ -462,6 +462,7 @@ st.markdown("""
         <p class="texto-creditos">© 2026 ElTacoLoco. Todos los derechos reservados. Hecho con 🔥 por AleRampz</p>
     </div>
 """, unsafe_allow_html=True)
+
 
 
 

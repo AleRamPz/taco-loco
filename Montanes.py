@@ -58,7 +58,7 @@ def get_img_as_base64(file):
         return None
 
 logo_base64 = get_img_as_base64("imagenes/logo.png")
-bg_base64 = get_img_as_base64("imagenes/fondo_tacos.png")
+bg_base64 = get_img_as_base64("imagenes/fondotacos.png")
 
 # CARGA DE IMÁGENES DEL CARRUSEL Y UBICACIÓN
 historia_base64 = get_img_as_base64("imagenes/historia.png")
@@ -444,6 +444,7 @@ st.markdown("""
 <p class="texto-creditos">© 2026 ElTacoLoco. Todos los derechos reservados. Hecho con 🔥 por AleRampz</p>
 </div>
 """, unsafe_allow_html=True)   
+
 
 
 

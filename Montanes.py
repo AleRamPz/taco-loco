@@ -619,35 +619,31 @@ with tabs[4]:
         for i, r in enumerate(todas_resenas):
             col = col_a if i % 2 == 0 else col_b
             estrellas_html = "⭐" * r["estrellas"] + "☆" * (5 - r["estrellas"])
+
+            # Construir HTML de imagen dentro de la tarjeta
+            img_url      = r.get("imagen_url", "")
+            img_b64_prev = r.get("imagen_b64_preview", "")
+            img_tipo_prev = r.get("imagen_tipo_preview", "image/jpeg")
+            img_html = ""
+            if img_url and img_url not in ("", "nan"):
+                if "id=" in img_url:
+                    file_id = img_url.split("id=")[-1].split("&")[0]
+                    thumb_url = f"https://drive.google.com/thumbnail?id={file_id}&sz=w800"
+                else:
+                    thumb_url = img_url
+                img_html = f'<img src="{thumb_url}" style="width:100%;border-radius:10px;margin-top:12px;object-fit:cover;max-height:220px;">'
+            elif img_b64_prev:
+                img_html = f'<img src="data:{img_tipo_prev};base64,{img_b64_prev}" style="width:100%;border-radius:10px;margin-top:12px;object-fit:cover;max-height:220px;">'
+
             with col:
                 st.markdown(f"""
 <div class="resena-card">
 <div class="resena-stars">{estrellas_html}</div>
 <p class="resena-texto">"{r['comentario']}"</p>
 <p class="resena-autor">— {r['nombre']} &nbsp;·&nbsp; {r['fecha']}</p>
+{img_html}
 </div>
 """, unsafe_allow_html=True)
-                # Mostrar imagen si existe URL de Drive o preview base64
-                img_url = r.get("imagen_url", "")
-                img_b64_prev = r.get("imagen_b64_preview", "")
-                img_tipo_prev = r.get("imagen_tipo_preview", "image/jpeg")
-                # Convertir URL de Drive a formato thumbnail (más confiable)
-                if img_url and img_url not in ("", "nan"):
-                    if "id=" in img_url:
-                        file_id = img_url.split("id=")[-1].split("&")[0]
-                        thumb_url = f"https://drive.google.com/thumbnail?id={file_id}&sz=w800"
-                    else:
-                        thumb_url = img_url
-                    st.markdown(
-                        f'<img src="{thumb_url}" style="width:100%;border-radius:12px;margin-top:-8px;margin-bottom:12px;object-fit:cover;">',
-                        unsafe_allow_html=True
-                    )
-                elif img_b64_prev:
-                    st.markdown(
-                        f'<img src="data:{img_tipo_prev};base64,{img_b64_prev}" '
-                        f'style="width:100%;border-radius:12px;margin-top:-8px;margin-bottom:12px;">',
-                        unsafe_allow_html=True
-                    )
     else:
         st.info("Aún no hay reseñas. ¡Sé el primero en comentar!")
 
@@ -803,7 +799,8 @@ with st.expander("⚙️"):
         st.divider()
         if st.button("Cerrar Sesión", type="secondary", use_container_width=True):
             st.session_state.admin_logged_in = False
-            st.rerun()  
+            st.rerun() 
+
 
 
 

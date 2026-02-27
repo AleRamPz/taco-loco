@@ -39,7 +39,7 @@ URL_CSV_RESENAS = "https://script.google.com/macros/s/AKfycbxCGiDEUAAvVXv4cfm05a
 if 'resenas' not in st.session_state:
     st.session_state.resenas = []
 # URL del Apps Script para guardar reseñas
-URL_APPS_SCRIPT_RESENAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTIoRwg327pe_n_h-paHJ2OMmufADQgIfeiTvXBWTzfnDyJn21dDhhSYq97WZIVb8ZzQfwaHlGGmvd/pub?gid=764839671&single=true&output=csv"
+URL_APPS_SCRIPT_RESENAS = "ttps://docs.google.com/spreadsheets/d/e/2PACX-1vQTIoRwg327pe_n_h-paHJ2OMmufADQgIfeiTvXBWTzfnDyJn21dDhhSYq97WZIVb8ZzQfwaHlGGmvd/pub?gid=764839671&single=true&output=csv"
 
 
 # ==========================================
@@ -106,7 +106,7 @@ def get_img_as_base64(file):
         return None
 
 logo_base64 = get_img_as_base64("imagenes/logo.png")
-bg_base64 = get_img_as_base64("imagenes/fondotacos.png")
+bg_base64 = get_img_as_base64("imagenes/fondo_tacos.png")
 
 # CARGA DE IMÁGENES DEL CARRUSEL Y UBICACIÓN
 historia_base64 = get_img_as_base64("imagenes/historia.png")
@@ -509,7 +509,7 @@ with tabs[4]:
     from datetime import datetime
 
     # Cargar reseñas desde Sheets (se actualiza cada 30 seg)
-    resenas_sheets = cargar_resenas_sheets(URL_CSV_RESENAS) if "https://script.google.com/macros/s/AKfycbxCGiDEUAAvVXv4cfm05ajiVKotnCYgeQv8wmePsQoM_GgkCp8poM7iSCGGj5TEbIm4/exec" not in URL_CSV_RESENAS else []
+    resenas_sheets = cargar_resenas_sheets(URL_CSV_RESENAS) if "PEGA_AQUI" not in URL_CSV_RESENAS else []
     # Combinar las reseñas de Sheets con las nuevas de sesión (antes de que recarguen)
     todas_resenas = st.session_state.resenas + resenas_sheets
 
@@ -584,7 +584,7 @@ with tabs[4]:
             }
 
             # Guardar en Google Sheets via Apps Script (hilo separado)
-            if "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTIoRwg327pe_n_h-paHJ2OMmufADQgIfeiTvXBWTzfnDyJn21dDhhSYq97WZIVb8ZzQfwaHlGGmvd/pub?gid=764839671&single=true&output=csv" not in URL_APPS_SCRIPT_RESENAS:
+            if "PEGA_AQUI" not in URL_APPS_SCRIPT_RESENAS:
                 threading.Thread(
                     target=enviar_resena_sheets,
                     args=(URL_APPS_SCRIPT_RESENAS, nueva_resena)
@@ -795,6 +795,7 @@ with st.expander("⚙️"):
         if st.button("Cerrar Sesión", type="secondary", use_container_width=True):
             st.session_state.admin_logged_in = False
             st.rerun()   
+
 
 
 

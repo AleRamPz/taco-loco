@@ -106,7 +106,7 @@ def get_img_as_base64(file):
         return None
 
 logo_base64 = get_img_as_base64("imagenes/logo.png")
-bg_base64 = get_img_as_base64("imagenes/fondo_tacos.png")
+bg_base64 = get_img_as_base64("imagenes/fondotacos.png")
 
 # CARGA DE IMÁGENES DEL CARRUSEL Y UBICACIÓN
 historia_base64 = get_img_as_base64("imagenes/historia.png")
@@ -795,6 +795,7 @@ with st.expander("⚙️"):
         if st.button("Cerrar Sesión", type="secondary", use_container_width=True):
             st.session_state.admin_logged_in = False
             st.rerun()   
+
 
 
 

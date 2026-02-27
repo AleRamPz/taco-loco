@@ -631,8 +631,17 @@ with tabs[4]:
                 img_url = r.get("imagen_url", "")
                 img_b64_prev = r.get("imagen_b64_preview", "")
                 img_tipo_prev = r.get("imagen_tipo_preview", "image/jpeg")
+                # Convertir URL de Drive a formato thumbnail (más confiable)
                 if img_url and img_url not in ("", "nan"):
-                    st.image(img_url, use_container_width=True)
+                    if "id=" in img_url:
+                        file_id = img_url.split("id=")[-1].split("&")[0]
+                        thumb_url = f"https://drive.google.com/thumbnail?id={file_id}&sz=w800"
+                    else:
+                        thumb_url = img_url
+                    st.markdown(
+                        f'<img src="{thumb_url}" style="width:100%;border-radius:12px;margin-top:-8px;margin-bottom:12px;object-fit:cover;">',
+                        unsafe_allow_html=True
+                    )
                 elif img_b64_prev:
                     st.markdown(
                         f'<img src="data:{img_tipo_prev};base64,{img_b64_prev}" '
@@ -794,7 +803,8 @@ with st.expander("⚙️"):
         st.divider()
         if st.button("Cerrar Sesión", type="secondary", use_container_width=True):
             st.session_state.admin_logged_in = False
-            st.rerun()   
+            st.rerun()  
+
 
 
 

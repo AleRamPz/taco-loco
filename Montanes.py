@@ -8,16 +8,6 @@ import re
 import altair as alt
 
 # ==========================================
-# 0.1 CONFIGURACIÓN INICIAL
-# ==========================================
-st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
-
-# --- INYECCIÓN DE METADESCRIPCIÓN PARA GOOGLE (SEO) ---
-st.markdown("""
-    <meta name="description" content="Los mejores tacos de Coita. Pide en línea en El Taco Loco: tacos de res, puerco, tripa y bebidas. Tradición familiar desde 2005. ¡Haz tu pedido por WhatsApp!">
-""", unsafe_allow_html=True)
-
-# ==========================================
 # 1. CONFIGURACIÓN INICIAL DE LA PÁGINA
 # ==========================================
 st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
@@ -819,6 +809,7 @@ st.markdown("""
 <p class="texto-creditos">© 2026 ElTacoLoco. Todos los derechos reservados. Hecho con 🔥 por AleRampz</p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 

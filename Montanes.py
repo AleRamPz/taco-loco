@@ -8,12 +8,11 @@ import re
 import altair as alt
 
 # ==========================================
-# 1. CONFIGURACIÓN INICIAL DE LA PÁGINA
+# 0.1 CONFIGURACIÓN INICIAL
 # ==========================================
 st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
 
 # --- INYECCIÓN DE METADESCRIPCIÓN Y PREVISUALIZACIÓN PARA REDES (SEO) ---
-# Usamos el logo que ya tienes en GitHub para la imagen de WhatsApp
 st.markdown("""
     <meta name="description" content="Los mejores tacos de Coita. Pide en línea en El Taco Loco: tacos de res, puerco, tripa y bebidas. Tradición familiar desde 2005. ¡Haz tu pedido por WhatsApp!">
     
@@ -277,7 +276,9 @@ def mostrar_carrito_modal():
             st.info("Tu carrito está vacío.")
             return
             
+        # --- CONTENEDOR MÁGICO PARA BORRAR FASE 1 SIN CERRAR EL MODAL ---
         vista_fase1 = st.empty()
+        
         with vista_fase1.container():
             total_venta = 0
             texto_pedido = ""
@@ -297,39 +298,64 @@ def mostrar_carrito_modal():
             st.divider()
             st.markdown(f"<h3 style='text-align: right; color: white !important;'>Total: ${total_venta}</h3>", unsafe_allow_html=True)
             
-            with st.form("form_pedido", border=False):
-                st.markdown("#### Datos de envío")
-                nombre = st.text_input("Nombre:")
-                direccion = st.text_area("Dirección exacta:")
-                ref = st.text_input("Referencia de la casa:")
-                notas = st.text_area("Instrucciones especiales (Opcional):", placeholder="Ej. Sin cebolla, salsas aparte...")
-                pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
-                confirmar = st.form_submit_button("Hacer Pedido", type="secondary", use_container_width=True)
+            st.markdown("#### Datos de envío")
+            nombre = st.text_input("Nombre:")
+            direccion = st.text_area("Dirección exacta:")
+            ref = st.text_input("Referencia de la casa:")
+            notas = st.text_area("Instrucciones especiales (Opcional):", placeholder="Ej. Sin cebolla, salsas aparte...")
             
-            if st.button("Vaciar Carrito", use_container_width=True):
-                st.session_state.carrito = {}
-                st.rerun()
+            pago = st.selectbox("Forma de Pago:", ["Efectivo 💵", "Transferencia 📱"])
+            
+            # --- DISEÑO CRISTAL ESMERILADO (Para que no salgan letras blancas invisibles) ---
+            if pago == "Transferencia 📱":
+                st.markdown("""
+                <div style='background-color: rgba(255, 255, 255, 0.15); padding: 20px; border-radius: 15px; border: 2px solid rgba(255,255,255,0.4); text-align: center; margin-bottom: 20px;'>
+                    <p style='margin: 0 0 10px 0; font-weight: 800; font-size: 1.2rem; font-family: Oswald, sans-serif; letter-spacing: 1px;'>💳 DATOS PARA TRANSFERENCIA</p>
+                    <h3 style='margin: 0; font-family: monospace; letter-spacing: 3px;'>1234 5678 9012 3456</h3>
+                    <p style='margin: 10px 0 5px 0; font-weight: 600;'>🏦 Banco: BBVA</p>
+                    <p style='margin: 0; font-weight: 600;'>👤 Nombre: Ana Lleli García</p>
+                    <hr style='border-color: rgba(255,255,255,0.3); margin: 15px 0;'>
+                    <p style='margin: 0; font-size: 0.95rem;'>📌 <b>Importante:</b> Envía tu comprobante por WhatsApp al confirmar.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                vaciar = st.button("Vaciar Carrito", use_container_width=True)
+            with col2:
+                confirmar = st.button("Hacer Pedido", type="primary", use_container_width=True)
+        
+        # --- ACCIONES AL HACER CLIC ---
+        if vaciar:
+            st.session_state.carrito = {}
+            st.rerun()
 
         if confirmar:
             if nombre and direccion:
                 msg_notas = f"\n📝 *Notas:* {notas}\n" if notas else "\n"
-                msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}{msg_notas}\n💰 *Total: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}"
+                
+                msg_final = f"Hola Taco Loco 🌮, soy *{nombre}*.\n\n*MI PEDIDO:*\n{texto_pedido}{msg_notas}\n💰 *Total de platillos: ${total_venta}*\n📍 *Dir:* {direccion}\n🏠 *Ref:* {ref}\n💸 *Pago:* {pago}\n\n🛵 *Nota: El costo de envío por mandadito es extra y depende de la distancia.*"
+                
+                if pago == "Transferencia 📱":
+                    msg_final += "\n\n🧾 *Adjunto mi comprobante de transferencia.*"
+
                 url_google_guardar = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec" 
                 texto_excel_con_notas = texto_para_excel
                 if notas: texto_excel_con_notas += f" | NOTAS: {notas}"
                 datos_excel = {"cliente": nombre, "direccion": f"{direccion} ({ref})", "pedido": texto_excel_con_notas, "total": total_venta, "pago": pago}
                 
                 threading.Thread(target=enviar_datos_excel, args=(url_google_guardar, datos_excel)).start()
-                msg_encoded = urllib.parse.quote(msg_final.encode('utf-8'))
+                
+                # ENLACE SEGURO DE WHATSAPP
+                msg_encoded = urllib.parse.quote(msg_final)
                 st.session_state.whatsapp_url = f"https://api.whatsapp.com/send?phone=529681171392&text={msg_encoded}"
                 st.session_state.fase_pedido = 2
+                
+                # ELIMINA EL FORMULARIO Y MUESTRA LA FASE 2 AL INSTANTE
                 vista_fase1.empty()
                 st.markdown("<div style='background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 15px; border: 2px solid white; text-align: center; margin-bottom: 20px;'><h2>¡Pedido registrado!</h2><p style='font-size: 1.1rem;'>Toca el botón para enviarnos tu pedido por WhatsApp y prepararlo rápido.</p></div>", unsafe_allow_html=True)
                 st.link_button("Enviar WhatsApp ahora", st.session_state.whatsapp_url, type="secondary", use_container_width=True)
-                if st.button("Terminar y limpiar", use_container_width=True):
-                    st.session_state.carrito = {}
-                    st.session_state.fase_pedido = 1
-                    st.rerun()
+                st.info("💡 Después de enviar el mensaje a WhatsApp, puedes cerrar esta ventana.")
             else:
                 st.error("⚠️ Completa tu nombre y dirección por favor.")
 
@@ -340,11 +366,10 @@ def mostrar_carrito_modal():
             st.session_state.carrito = {}
             st.session_state.fase_pedido = 1
             st.rerun()
-
+        
 # ==========================================
 # 7. ESTRUCTURA VISUAL DE LA PÁGINA (UI)
 # ==========================================
-# !!! LOGO WEBP EN EL HEADER !!!
 logo_html = f'<img src="data:image/webp;base64,{logo_base64}" class="logo-esquina">' if logo_base64 else ''
 st.markdown(f"""
 <div class="header-container">
@@ -382,9 +407,13 @@ with col_carrito:
     else:
         st.button("🚫 Pedidos Pausados", disabled=True, use_container_width=True)
 
-tabs = st.tabs(["Tacos", "Bebidas", "Ubicación", "Conócenos", "⭐ Reseñas"])
+
+# --- NUEVAS PESTAÑAS (Tacos y Bebidas fusionados) ---
+tabs = st.tabs(["🌮 Menú", "Ubicación", "Conócenos", "⭐ Reseñas"])
 
 with tabs[0]:
+    # --- SECCIÓN DE TACOS ---
+    st.markdown("<h3 style='color: var(--color-rojo) !important; font-family: Oswald, sans-serif; margin-bottom: 10px; border-bottom: 2px solid var(--color-naranja); padding-bottom: 5px; font-size: 1.8rem;'>🌮 NUESTROS TACOS</h3>", unsafe_allow_html=True)
     if not menu_tacos:
         st.info("Aún no hay tacos en el menú. ¡Agrega algunos en tu Excel!")
     else:
@@ -411,7 +440,10 @@ with tabs[0]:
                     else:
                         st.button("Agregar al pedido", key=f"add_t_{i}", on_click=agregar_al_carrito, args=(nombre, "taco"), use_container_width=True)
 
-with tabs[1]:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # --- SECCIÓN DE BEBIDAS ---
+    st.markdown("<h3 style='color: var(--color-rojo) !important; font-family: Oswald, sans-serif; margin-bottom: 10px; border-bottom: 2px solid var(--color-naranja); padding-bottom: 5px; font-size: 1.8rem;'>🥤 BEBIDAS BIEN FRÍAS</h3>", unsafe_allow_html=True)
     if not menu_bebidas:
         st.info("Aún no hay bebidas en el menú. ¡Agrega algunas en tu Excel!")
     else:
@@ -437,7 +469,7 @@ with tabs[1]:
                     else:
                         st.button("Agregar al pedido", key=f"add_b_{i}", on_click=agregar_al_carrito, args=(nombre, "bebida"), use_container_width=True)
 
-with tabs[2]:
+with tabs[1]:
     st.markdown("### Encuéntranos")
     mapa_html = """<iframe src="https://www.google.com/maps?q=16.753554732500405,-93.37373160552643&hl=es&z=16&output=embed" width="100%" height="350" style="border:0; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" allowfullscreen="" loading="lazy"></iframe>"""
     st.markdown(mapa_html, unsafe_allow_html=True)
@@ -447,7 +479,7 @@ with tabs[2]:
     try: st.image("imagenes/local_nuevo.webp", caption="¡Te esperamos con los mejores tacos!", use_container_width=True)
     except: st.info("Guarda la foto del carrito de frente como 'local_nuevo.webp' en la carpeta 'imagenes'.")
 
-with tabs[3]:
+with tabs[2]:
     st.markdown(f"""
 <div class="about-hero">
 <h2>EL TACO LOCO: 20 AÑOS DE TRADICIÓN</h2>
@@ -474,7 +506,7 @@ with tabs[3]:
 </div>
 <div style="flex: 1; min-width: 250px;">
 <h3 style="color: #FF6B00 !important; font-family: 'Oswald', sans-serif !important; font-size: 1.8rem; margin-bottom: 15px; border-bottom: 2px solid rgba(255,107,0,0.2); padding-bottom: 10px; letter-spacing: 1px; margin-top: 0;">👁️ NUESTRA VISIÓN</h3>
-<p style="color: #1D1D1F !important; line-height: 1.6; font-size: 1.05rem; font-weight: 500; margin: 0;">Consolidarnos como la taquería de tradición preferida en nuestra comunidad, siendo un referente de cómo el sabor inigualable y la atención humana pueden perdurar por generaciones. Aspiramos a ser un legado familiar que inspire, demostrando que el trabajo hecho con cariño y perseverancia es el ingrediente principal del éxito.</p>
+<p style="color: #1D1D1F !important; line-height: 1.6; font-size: 1.05rem; font-weight: 500; margin: 0;">Consolidarnos como la taquería de tradición preferida en nuestra comunidad, siendo un referente de cómo el sabor inigualable y la atención humana pueden perdurar por generations. Aspiramos a ser un legado familiar que inspire, demostrando que el trabajo hecho con cariño y perseverancia es el ingrediente principal del éxito.</p>
 </div>
 </div>
 <h2 class="valores-title">NUESTROS VALORES</h2>
@@ -524,7 +556,7 @@ with tabs[3]:
 </div>
 """, unsafe_allow_html=True)
 
-with tabs[4]:
+with tabs[3]:
     from datetime import datetime
 
     # Cargar reseñas desde Sheets (se actualiza cada 30 seg)
@@ -824,6 +856,7 @@ st.markdown("""
 <p class="texto-creditos">© 2026 ElTacoLoco. Todos los derechos reservados. Hecho con 🔥 por AleRampz</p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 

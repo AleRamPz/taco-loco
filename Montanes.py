@@ -8,13 +8,19 @@ import re
 import altair as alt
 
 # ==========================================
-# 0.1 CONFIGURACIÓN INICIAL
+# 1. CONFIGURACIÓN INICIAL DE LA PÁGINA
 # ==========================================
 st.set_page_config(page_title="EL TACO LOCO", page_icon="🌮", layout="wide")
 
-# --- INYECCIÓN DE METADESCRIPCIÓN PARA GOOGLE (SEO) ---
+# --- INYECCIÓN DE METADESCRIPCIÓN Y PREVISUALIZACIÓN PARA REDES (SEO) ---
+# Usamos el logo que ya tienes en GitHub para la imagen de WhatsApp
 st.markdown("""
     <meta name="description" content="Los mejores tacos de Coita. Pide en línea en El Taco Loco: tacos de res, puerco, tripa y bebidas. Tradición familiar desde 2005. ¡Haz tu pedido por WhatsApp!">
+    
+    <meta property="og:title" content="El Taco Loco - Menú Digital">
+    <meta property="og:description" content="Los mejores tacos de Coita a un clic de distancia. ¡Tradición desde 2005!">
+    <meta property="og:image" content="https://raw.githubusercontent.com/AleRampz/el-taco-loco/main/imagenes/logo.webp">
+    <meta property="og:url" content="https://eltacoloco.streamlit.app">
 """, unsafe_allow_html=True)
 
 # ==========================================
@@ -818,6 +824,7 @@ st.markdown("""
 <p class="texto-creditos">© 2026 ElTacoLoco. Todos los derechos reservados. Hecho con 🔥 por AleRampz</p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 

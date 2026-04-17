@@ -5,7 +5,7 @@ const URL_CSV_MENU = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTIoRwg32
 const URL_CSV_RESENAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTIoRwg327pe_n_h-paHJ2OMmufADQgIfeiTvXBWTzfnDyJn21dDhhSYq97WZIVb8ZzQfwaHlGGmvd/pub?gid=764839671&single=true&output=csv";
 const URL_APPS_SCRIPT_RESENAS = "https://script.google.com/macros/s/AKfycbxCGiDEUAAvVXv4cfm05ajiVKotnCYgeQv8wmePsQoM_GgkCp8poM7iSCGGj5TEbIm4/exec";
 const URL_APPS_SCRIPT_PEDIDOS = "https://script.google.com/macros/s/AKfycbyHzbARjCcog41iCwBvCvA4aburgAlGGHSA5EEQuGP64CQe36-j-piizwITeysVVA5u/exec";
-const WHATSAPP_NUMBER = "529681171392";
+const WHATSAPP_NUMBER = "529611232147";
 
 // ==========================================
 // ESTADO GLOBAL DE LA APP (Memoria)
